@@ -1,16 +1,17 @@
 # persistence-sqlite
 
-Persistence Layer do RPG Engine — Fase 5. Salva estado canônico de campanhas e entidades em SQLite, sem misturar banco de dados com o `engine-core`.
+Persistence Layer do RPG Engine. Salva estado canonico de campanhas, entidades e combate basico em SQLite, sem misturar banco de dados com o `engine-core`.
 
 ## Status
 
-Implementa a primeira fatia de persistência:
+Implementa a persistencia necessaria para a Fase 7:
 
 - schema SQLite criado automaticamente;
 - campanhas;
 - entidades;
-- atributos base explícitos da `Entity`;
-- `Effect`s ativos, preservando ordem, `duration` e `stacking`.
+- atributos base explicitos da `Entity`;
+- `Effect`s ativos, preservando ordem, `duration` e `stacking`;
+- encontros de combate basicos com participantes, iniciativa e turno atual.
 
 Validar da raiz do workspace:
 
@@ -22,32 +23,36 @@ cargo test
 
 | Arquivo | Responsabilidade |
 |---|---|
-| `lib.rs` | API pública do crate. |
-| `store.rs` | `SqliteStore`, schema e operações de salvar/carregar. |
-| `error.rs` | `PersistenceError`, incluindo erros de conversão de valores armazenados. |
+| `lib.rs` | API publica do crate. |
+| `store.rs` | `SqliteStore`, schema e operacoes de salvar/carregar. |
+| `error.rs` | `PersistenceError`, incluindo erros de conversao de valores armazenados. |
 
 ## Como funciona
 
-O crate persiste apenas o estado canônico:
+O crate persiste apenas estado canonico/operacional minimo:
 
 - `Campaign` (`id`, `name`, `ruleset_id`);
 - `Entity` (`id`, `ruleset_id`);
 - atributos base definidos explicitamente;
-- efeitos ativos.
+- efeitos ativos;
+- `CombatEncounter` (`id`, `campaign_id`, `current_turn_index`);
+- `CombatParticipant` (`id`, `entity_id` opcional, `name`, `initiative`).
 
-Valores calculados por `engine_core::compute_attributes()` **não** são salvos. Eles devem ser recalculados quando a ficha for carregada, usando o `Ruleset` atual e os efeitos ativos.
+Valores calculados por `engine_core::compute_attributes()` **nao** sao salvos. Eles devem ser recalculados quando a ficha for carregada, usando o `Ruleset` atual e os efeitos ativos.
 
-Essa decisão mantém a regra da arquitetura: salvar estado canônico, não valores derivados. Também mantém o `engine-core` agnóstico de SQLite; o domínio só expõe os dados canônicos da `Entity`.
+O estado de combate salvo aqui e propositalmente pequeno: ordem de iniciativa e participante do turno atual. Ele nao calcula regra de combate, nao expira `Duration::Rounds` automaticamente e nao salva atributos derivados/cache de ficha.
+
+Essa decisao mantem a regra da arquitetura: salvar estado canonico, nao valores derivados. Tambem mantem o `engine-core` agnostico de SQLite; o dominio so expoe os dados canonicos da `Entity`.
 
 ## Limites atuais
 
-- Não há migrations versionadas ainda; o schema é criado com `CREATE TABLE IF NOT EXISTS`.
-- Não há Content Registry nem resolução automática de ContentNode por id.
-- Não há persistência de valores derivados/cache de ficha.
-- Não há runtime de combate, expiração automática de `Duration::Rounds` ou regras completas de stacking.
+- Nao ha migrations versionadas ainda; o schema e criado com `CREATE TABLE IF NOT EXISTS`.
+- Nao ha Content Registry nem resolucao automatica de ContentNode por id.
+- Nao ha persistencia de valores derivados/cache de ficha.
+- Nao ha expiracao automatica de `Duration::Rounds` ou regras completas de stacking.
 
 Esses pontos ficam para fases futuras, quando houver fluxo real exigindo cada um.
 
-## Relação com a Fase 6
+## Relacao com o app desktop
 
-A UI desktop já existe em `apps/desktop`, mas ainda não salva/carrega personagens reais por este crate. A integração entre ficha editável e persistência fica para uma fatia futura de campanhas/personagens.
+O app em `apps/desktop` usa este crate para criar/carregar uma campanha local padrao, salvar o personagem inicial como estado canonico e manter um combate simples com iniciativa e turno atual.

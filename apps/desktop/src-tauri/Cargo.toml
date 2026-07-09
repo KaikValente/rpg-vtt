@@ -11,6 +11,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 [dependencies]
 content-loader = { path = "../../../content-loader" }
 engine-core = { path = "../../../engine-core" }
+persistence-sqlite = { path = "../../../persistence-sqlite" }
 serde = { version = "1", features = ["derive"] }
 tauri = { version = "2", features = [] }
 

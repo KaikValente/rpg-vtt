@@ -26,6 +26,62 @@ impl Campaign {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CombatEncounter {
+    pub id: String,
+    pub campaign_id: String,
+    pub current_turn_index: usize,
+    pub participants: Vec<CombatParticipant>,
+}
+
+impl CombatEncounter {
+    pub fn new(
+        id: impl Into<String>,
+        campaign_id: impl Into<String>,
+        participants: Vec<CombatParticipant>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            campaign_id: campaign_id.into(),
+            current_turn_index: 0,
+            participants,
+        }
+    }
+
+    pub fn advance_turn(&mut self) {
+        if self.participants.is_empty() {
+            self.current_turn_index = 0;
+            return;
+        }
+
+        self.current_turn_index = (self.current_turn_index + 1) % self.participants.len();
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CombatParticipant {
+    pub id: String,
+    pub entity_id: Option<String>,
+    pub name: String,
+    pub initiative: i64,
+}
+
+impl CombatParticipant {
+    pub fn new(
+        id: impl Into<String>,
+        entity_id: Option<String>,
+        name: impl Into<String>,
+        initiative: i64,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            entity_id,
+            name: name.into(),
+            initiative,
+        }
+    }
+}
+
 pub struct SqliteStore {
     conn: Connection,
 }
@@ -83,6 +139,25 @@ impl SqliteStore {
                 stacking TEXT NOT NULL,
                 PRIMARY KEY (entity_id, position),
                 FOREIGN KEY (entity_id) REFERENCES entities(id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS combat_encounters (
+                id TEXT PRIMARY KEY,
+                campaign_id TEXT NOT NULL,
+                current_turn_index INTEGER NOT NULL,
+                FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS combat_participants (
+                encounter_id TEXT NOT NULL,
+                position INTEGER NOT NULL,
+                id TEXT NOT NULL,
+                entity_id TEXT,
+                name TEXT NOT NULL,
+                initiative INTEGER NOT NULL,
+                PRIMARY KEY (encounter_id, position),
+                FOREIGN KEY (encounter_id) REFERENCES combat_encounters(id) ON DELETE CASCADE,
+                FOREIGN KEY (entity_id) REFERENCES entities(id) ON DELETE SET NULL
             );
             "#,
         )?;
@@ -222,6 +297,139 @@ impl SqliteStore {
         }
 
         Ok(Some(entity))
+    }
+
+    pub fn save_combat_encounter(
+        &mut self,
+        encounter: &CombatEncounter,
+    ) -> Result<(), PersistenceError> {
+        let tx = self.conn.transaction()?;
+        tx.execute(
+            r#"
+            INSERT INTO combat_encounters (id, campaign_id, current_turn_index)
+            VALUES (?1, ?2, ?3)
+            ON CONFLICT(id) DO UPDATE SET
+                campaign_id = excluded.campaign_id,
+                current_turn_index = excluded.current_turn_index
+            "#,
+            params![
+                encounter.id,
+                encounter.campaign_id,
+                encounter.current_turn_index as i64
+            ],
+        )?;
+
+        tx.execute(
+            "DELETE FROM combat_participants WHERE encounter_id = ?1",
+            params![encounter.id],
+        )?;
+        for (position, participant) in encounter.participants.iter().enumerate() {
+            tx.execute(
+                r#"
+                INSERT INTO combat_participants (
+                    encounter_id,
+                    position,
+                    id,
+                    entity_id,
+                    name,
+                    initiative
+                )
+                VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+                "#,
+                params![
+                    encounter.id,
+                    position as i64,
+                    participant.id,
+                    participant.entity_id,
+                    participant.name,
+                    participant.initiative,
+                ],
+            )?;
+        }
+
+        tx.commit()?;
+        Ok(())
+    }
+
+    pub fn load_combat_encounter(
+        &self,
+        id: &str,
+    ) -> Result<Option<CombatEncounter>, PersistenceError> {
+        let Some((encounter_id, campaign_id, current_turn_index)) = self
+            .conn
+            .query_row(
+                r#"
+                SELECT id, campaign_id, current_turn_index
+                FROM combat_encounters
+                WHERE id = ?1
+                "#,
+                params![id],
+                |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, i64>(2)?,
+                    ))
+                },
+            )
+            .optional()?
+        else {
+            return Ok(None);
+        };
+
+        let mut stmt = self.conn.prepare(
+            r#"
+            SELECT id, entity_id, name, initiative
+            FROM combat_participants
+            WHERE encounter_id = ?1
+            ORDER BY position
+            "#,
+        )?;
+        let rows = stmt.query_map(params![encounter_id], |row| {
+            Ok(CombatParticipant {
+                id: row.get(0)?,
+                entity_id: row.get(1)?,
+                name: row.get(2)?,
+                initiative: row.get(3)?,
+            })
+        })?;
+
+        let mut participants = Vec::new();
+        for row in rows {
+            participants.push(row?);
+        }
+
+        Ok(Some(CombatEncounter {
+            id: encounter_id,
+            campaign_id,
+            current_turn_index: current_turn_index.max(0) as usize,
+            participants,
+        }))
+    }
+
+    pub fn load_campaign_combat(
+        &self,
+        campaign_id: &str,
+    ) -> Result<Option<CombatEncounter>, PersistenceError> {
+        let Some(encounter_id) = self
+            .conn
+            .query_row(
+                r#"
+                SELECT id
+                FROM combat_encounters
+                WHERE campaign_id = ?1
+                ORDER BY id
+                LIMIT 1
+                "#,
+                params![campaign_id],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()?
+        else {
+            return Ok(None);
+        };
+
+        self.load_combat_encounter(&encounter_id)
     }
 }
 
@@ -410,5 +618,37 @@ mod tests {
         assert_eq!(loaded.base("STR"), None);
         assert_eq!(loaded.base("DEX"), Some(14));
         assert!(loaded.effects().is_empty());
+    }
+
+    #[test]
+    fn saves_loads_and_advances_basic_combat() {
+        let mut store = SqliteStore::in_memory().unwrap();
+        store
+            .save_campaign(&Campaign::new("campaign-1", "Mesa de Quinta", "dnd5e"))
+            .unwrap();
+
+        let mut entity = Entity::new("hero-1", "dnd5e");
+        entity.set_base("DEX", 14);
+        store.save_entity("campaign-1", &entity).unwrap();
+
+        let mut encounter = CombatEncounter::new(
+            "combat-1",
+            "campaign-1",
+            vec![
+                CombatParticipant::new("hero-1-combat", Some("hero-1".to_string()), "Arannis", 15),
+                CombatParticipant::new("goblin-1", None, "Goblin de treino", 12),
+            ],
+        );
+        encounter.advance_turn();
+
+        store.save_combat_encounter(&encounter).unwrap();
+        let loaded = store
+            .load_campaign_combat("campaign-1")
+            .unwrap()
+            .expect("combat should be saved");
+
+        assert_eq!(loaded.id, "combat-1");
+        assert_eq!(loaded.current_turn_index, 1);
+        assert_eq!(loaded.participants, encounter.participants);
     }
 }

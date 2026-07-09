@@ -21,8 +21,11 @@ O frontend chama comandos Tauri. O backend Tauri orquestra os crates existentes 
 - App React/Vite.
 - Backend Tauri v2.
 - Comando `load_character_sheet`.
-- Ficha inicial do Humano Mago nivel 1 usando o content pack `dnd5e-core`.
-- Teste Rust garantindo que a ficha e montada a partir do content pack.
+- Campanha local padrao criada/carregada via `persistence-sqlite`.
+- Personagem inicial Humano Mago nivel 1 salvo como estado canonico e depois recalculado usando o content pack `dnd5e-core`.
+- Comandos `start_basic_combat` e `advance_combat_turn`.
+- Painel de combate com participantes, iniciativa e turno atual.
+- Testes Rust garantindo que a ficha e montada a partir do estado salvo, que edicoes canonicas persistidas sao preservadas e que o combate basico avanca turno.
 
 ## Rodando
 
@@ -54,6 +57,5 @@ cargo test
 ## Limites atuais
 
 - Ainda nao ha edicao da ficha pela UI.
-- Ainda nao ha selecao de campanha/personagem salvo.
-- Ainda nao ha integracao da UI com `persistence-sqlite`.
-- Ainda nao ha combate, mapas ou bestiario.
+- Ainda nao ha selecao de campanha/personagem salvo; existe apenas uma campanha local padrao.
+- O combate ainda e minimo: nao ha ataques, dano, condicoes, expiracao de efeitos por rodada, mapas ou bestiario.

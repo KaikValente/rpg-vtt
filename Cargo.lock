@@ -2525,6 +2525,7 @@ version = "0.1.0"
 dependencies = [
  "content-loader",
  "engine-core",
+ "persistence-sqlite",
  "serde",
  "tauri",
  "tauri-build",

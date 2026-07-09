@@ -45,7 +45,7 @@ npm run tauri dev
 - [x] **Fase 4 — Fatia vertical: Humano Mago nível 1.** `mechanics.data` tipado por tipo (`race`/`feature`/`class`/`spell`/`item`). Personagem completo montado a partir de 9 arquivos de conteúdo real, PV calculado bate com a regra do SRD. **Ainda não validado localmente.**
 - [x] **Fase 5 — Persistência SQLite.** Novo crate `persistence-sqlite` salva campanhas, entidades, atributos base explícitos e effects ativos. Não persiste valores derivados de `compute_attributes`; eles continuam sendo recalculados pelo `engine-core`.
 - [x] **Fase 6 — UI: Ficha de Personagem.** App desktop Tauri + React em `apps/desktop`, com comando Tauri que monta a ficha do Humano Mago nível 1 usando `content-loader` + `engine-core`.
-- [ ] Fase 7 — Campanhas e Combate básico
+- [x] **Fase 7 — Campanhas e Combate básico.** App desktop cria/carrega campanha local via `persistence-sqlite`, salva o personagem inicial como estado canônico, recalcula a ficha a partir do estado salvo e oferece combate mínimo com participantes, iniciativa e avanço de turno.
 - [ ] Fase 8 — Bestiário e NPCs
 - [ ] Fase 9 — Mapas (básico)
 - [ ] Fase 10 — Homebrew tooling

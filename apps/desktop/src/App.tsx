@@ -37,19 +37,47 @@ type CharacterSheet = {
   items: ItemSummary[];
 };
 
+type CampaignSummary = {
+  id: string;
+  name: string;
+  rulesetId: string;
+};
+
+type CampaignWorkspace = {
+  campaign: CampaignSummary;
+  character: CharacterSheet;
+  combat?: CombatSummary | null;
+};
+
+type CombatSummary = {
+  id: string;
+  currentTurnIndex: number;
+  currentTurnParticipantId?: string | null;
+  participants: CombatParticipantSummary[];
+};
+
+type CombatParticipantSummary = {
+  id: string;
+  entityId?: string | null;
+  name: string;
+  initiative: number;
+  isCurrentTurn: boolean;
+};
+
 function modifierText(value: number) {
   return value >= 0 ? `+${value}` : `${value}`;
 }
 
 function App() {
-  const [sheet, setSheet] = useState<CharacterSheet | null>(null);
+  const [workspace, setWorkspace] = useState<CampaignWorkspace | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [combatBusy, setCombatBusy] = useState(false);
 
   useEffect(() => {
-    invoke<CharacterSheet>("load_character_sheet")
+    invoke<CampaignWorkspace>("load_character_sheet")
       .then((loaded) => {
-        setSheet(loaded);
+        setWorkspace(loaded);
         setError(null);
       })
       .catch((err) => {
@@ -60,7 +88,23 @@ function App() {
       });
   }, []);
 
+  function runCombatCommand(command: "start_basic_combat" | "advance_combat_turn") {
+    setCombatBusy(true);
+    invoke<CampaignWorkspace>(command)
+      .then((loaded) => {
+        setWorkspace(loaded);
+        setError(null);
+      })
+      .catch((err) => {
+        setError(String(err));
+      })
+      .finally(() => {
+        setCombatBusy(false);
+      });
+  }
+
   const spellGroups = useMemo(() => {
+    const sheet = workspace?.character;
     if (!sheet) {
       return [];
     }
@@ -74,13 +118,13 @@ function App() {
         spells: sheet.spells.filter((spell) => spell.level === 1),
       },
     ];
-  }, [sheet]);
+  }, [workspace]);
 
   if (loading) {
     return <main className="app-shell loading">Carregando ficha...</main>;
   }
 
-  if (error || !sheet) {
+  if (error || !workspace) {
     return (
       <main className="app-shell loading">
         <h1>RPG Engine</h1>
@@ -89,8 +133,21 @@ function App() {
     );
   }
 
+  const { campaign, character: sheet } = workspace;
+
   return (
     <main className="app-shell">
+      <section className="campaign-bar" aria-label="Campanha">
+        <div>
+          <span>Campanha</span>
+          <strong>{campaign.name}</strong>
+        </div>
+        <div>
+          <span>Estado</span>
+          <strong>SQLite local</strong>
+        </div>
+      </section>
+
       <section className="sheet-header">
         <div>
           <p className="eyebrow">{sheet.rulesetId}</p>
@@ -167,6 +224,55 @@ function App() {
               </article>
             ))}
           </div>
+        </section>
+
+        <section className="panel">
+          <div className="panel-heading panel-heading-row">
+            <h2>Combate</h2>
+            {workspace.combat ? (
+              <button
+                className="text-button"
+                disabled={combatBusy}
+                type="button"
+                onClick={() => runCombatCommand("advance_combat_turn")}
+              >
+                Proximo turno
+              </button>
+            ) : (
+              <button
+                className="text-button"
+                disabled={combatBusy}
+                type="button"
+                onClick={() => runCombatCommand("start_basic_combat")}
+              >
+                Iniciar
+              </button>
+            )}
+          </div>
+          {workspace.combat ? (
+            <div className="initiative-list">
+              {workspace.combat.participants.map((participant) => (
+                <article
+                  className={
+                    participant.isCurrentTurn
+                      ? "initiative-row current"
+                      : "initiative-row"
+                  }
+                  key={participant.id}
+                >
+                  <div>
+                    <strong>{participant.name}</strong>
+                    <span>
+                      {participant.isCurrentTurn ? "turno atual" : "aguardando"}
+                    </span>
+                  </div>
+                  <em>{participant.initiative}</em>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="empty-state">Nenhum combate ativo.</p>
+          )}
         </section>
       </section>
     </main>
