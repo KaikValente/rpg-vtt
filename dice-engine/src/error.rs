@@ -15,7 +15,10 @@ pub enum DiceError {
     /// `count`/`sides` fora de faixa razoável (ex: 0 lados, quantidade
     /// negativa via overflow). Evita que uma fórmula mal-intencionada ou
     /// bugada trave o programa alocando um Vec gigante.
-    InvalidDiceSpec { count: u32, sides: u32 },
+    InvalidDiceSpec {
+        count: u32,
+        sides: u32,
+    },
 }
 
 impl fmt::Display for DiceError {

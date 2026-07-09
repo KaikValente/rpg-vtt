@@ -177,10 +177,7 @@ mod tests {
     #[test]
     fn tokenizes_implicit_one_dice() {
         let tokens = Lexer::tokenize("d20").unwrap();
-        assert_eq!(
-            tokens,
-            vec![Token::Dice, Token::Number(20), Token::Eof]
-        );
+        assert_eq!(tokens, vec![Token::Dice, Token::Number(20), Token::Eof]);
     }
 
     #[test]

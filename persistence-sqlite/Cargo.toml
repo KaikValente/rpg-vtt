@@ -1,0 +1,9 @@
+[package]
+name = "persistence-sqlite"
+version = "0.1.0"
+edition = "2021"
+description = "SQLite persistence layer for RPG Engine canonical campaign and entity state."
+
+[dependencies]
+engine-core = { path = "../engine-core" }
+rusqlite = { version = "0.32", features = ["bundled"] }

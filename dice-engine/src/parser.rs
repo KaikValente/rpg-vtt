@@ -128,10 +128,8 @@ impl Parser {
                 self.advance();
                 if self.peek() == &Token::Dice {
                     self.advance();
-                    let count = u32::try_from(n).map_err(|_| DiceError::InvalidDiceSpec {
-                        count: 0,
-                        sides: 0,
-                    })?;
+                    let count = u32::try_from(n)
+                        .map_err(|_| DiceError::InvalidDiceSpec { count: 0, sides: 0 })?;
                     self.parse_dice_tail(count)
                 } else {
                     Ok(Expr::Number(n))
@@ -149,10 +147,8 @@ impl Parser {
     /// implícito via `d20`). Falta ler os lados e o modificador opcional.
     fn parse_dice_tail(&mut self, count: u32) -> Result<Expr, DiceError> {
         let sides_raw = self.expect_number()?;
-        let sides = u32::try_from(sides_raw).map_err(|_| DiceError::InvalidDiceSpec {
-            count,
-            sides: 0,
-        })?;
+        let sides =
+            u32::try_from(sides_raw).map_err(|_| DiceError::InvalidDiceSpec { count, sides: 0 })?;
 
         if count == 0 || sides == 0 {
             return Err(DiceError::InvalidDiceSpec { count, sides });

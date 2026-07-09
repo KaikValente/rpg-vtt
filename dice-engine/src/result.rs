@@ -82,7 +82,12 @@ fn describe_node(node: &EvalNode) -> String {
                 BinaryOp::Mul => "*",
                 BinaryOp::Div => "/",
             };
-            format!("({} {} {})", describe_node(left), op_str, describe_node(right))
+            format!(
+                "({} {} {})",
+                describe_node(left),
+                op_str,
+                describe_node(right)
+            )
         }
     }
 }

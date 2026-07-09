@@ -35,6 +35,10 @@ impl Entity {
         self.base_attributes.get(attribute_id).copied()
     }
 
+    pub fn base_attributes(&self) -> &HashMap<String, i64> {
+        &self.base_attributes
+    }
+
     pub fn add_effect(&mut self, effect: Effect) {
         self.effects.push(effect);
     }

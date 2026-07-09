@@ -12,6 +12,7 @@ rpg-engine/
 ├── dice-engine/           # Fase 1 — motor de rolagem, independente
 ├── engine-core/           # Fase 2 — Domain Layer (Entity/AttributeDefinition/DerivedRule/Effect)
 ├── content-loader/        # Fases 3-4 — Content Layer (lê JSON, tipa por tipo, converte pro Domain Layer)
+├── persistence-sqlite/    # Fase 5 — Persistence Layer (SQLite, estado canônico)
 └── content-packs/         # dados de conteúdo (JSON), não código
     └── dnd5e-core/         # ruleset + 1 raça + 1 feature + 1 classe + 4 magias + 3 itens
 ```
@@ -32,7 +33,7 @@ cargo test
 - [x] **Fase 2 — Domain Core.** `Entity`, `AttributeDefinition`, `DerivedRule`, `Effect`, motor de recálculo com resolução topológica de dependências. 5 testes + doctest, todos passando (validado localmente).
 - [x] **Fase 3 — Content Loader.** Lê `manifest.json`/`ruleset.json`/`ContentNode` em JSON e converte pro `engine-core`. 4 testes, validado localmente.
 - [x] **Fase 4 — Fatia vertical: Humano Mago nível 1.** `mechanics.data` tipado por tipo (`race`/`feature`/`class`/`spell`/`item`). Personagem completo montado a partir de 9 arquivos de conteúdo real, PV calculado bate com a regra do SRD. **Ainda não validado localmente.**
-- [ ] Fase 5 — Persistência (SQLite)
+- [x] **Fase 5 — Persistência SQLite.** Novo crate `persistence-sqlite` salva campanhas, entidades, atributos base explícitos e effects ativos. Não persiste valores derivados de `compute_attributes`; eles continuam sendo recalculados pelo `engine-core`.
 - [ ] Fase 6 — UI: Ficha de Personagem
 - [ ] Fase 7 — Campanhas e Combate básico
 - [ ] Fase 8 — Bestiário e NPCs

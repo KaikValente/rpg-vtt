@@ -20,7 +20,7 @@ cargo test
 | `attribute.rs` | `AttributeDefinition`: um atributo declarado por um Ruleset (id, label, valor padrão). O core nunca sabe o que "STR" significa. |
 | `rule.rs` | `DerivedRule`: uma fórmula que **calcula** um valor a partir de outros (ex: bônus de proficiência a partir do nível). |
 | `effect.rs` | `Effect`: uma modificação declarativa que **altera** um valor existente quando está "ativo" numa Entity (item equipado, magia ativa). Inclui `source`, `duration`, `stacking` conforme a especificação da arquitetura. |
-| `entity.rs` | `Entity`: qualquer "coisa" com atributos (personagem, NPC, monstro). Guarda só valores base + effects ativos — não calcula nada sozinha. |
+| `entity.rs` | `Entity`: qualquer "coisa" com atributos (personagem, NPC, monstro). Guarda só valores base + effects ativos — não calcula nada sozinha. Expõe leitura dos atributos base para a camada de persistência salvar estado canônico. |
 | `engine.rs` | `compute_attributes()`: o motor de recálculo. Resolve base → effects → derived rules (em ordem topológica), usando o `dice-engine` pra avaliar cada fórmula. |
 | `error.rs` | `EngineError`: dependência circular, atributo desconhecido, erro de fórmula (propagado do `dice-engine`). |
 

@@ -19,6 +19,12 @@ Antes de modificar qualquer arquivo:
 5. Explique o que entendeu.
 6. Não altere arquitetura sem justificar.
 
+# Regra de ouro
+
+Se existir qualquer conflito entre o pedido do usuário e a arquitetura do projeto, pare e explique o conflito antes de escrever código.
+
+Nunca altere a arquitetura silenciosamente.
+
 ## Arquitetura atual
 
 Workspace Rust com crates separados:
@@ -26,6 +32,7 @@ Workspace Rust com crates separados:
 - dice-engine: parser, AST, evaluator e rolagens de dados.
 - engine-core: domínio genérico, Entity, AttributeDefinition, DerivedRule e Effect.
 - content-loader: lê content-packs JSON e converte para engine-core.
+- persistence-sqlite: persistência SQLite de estado canônico.
 - content-packs: conteúdo declarativo, começando por D&D 5e SRD.
 
 O fluxo é:
@@ -34,6 +41,9 @@ content-packs JSON
 -> content-loader
 -> engine-core
 -> dice-engine
+
+persistence-sqlite salva e carrega estado canônico de campanhas e entidades,
+sem persistir valores derivados calculados pelo engine-core.
 
 ## Regras de arquitetura
 
@@ -66,6 +76,6 @@ Ao terminar uma tarefa:
 
 ## Fase atual
 
-Fase atual: preparar Fase 5 — Persistência SQLite.
+Fase atual: Fase 5 — Persistência SQLite implementada.
 
-Antes de iniciar a Fase 5, remover sujeiras óbvias do projeto, como a pasta `src/` da raiz se ela não fizer parte do workspace.
+Próxima fase planejada: Fase 6 — UI: Ficha de Personagem.

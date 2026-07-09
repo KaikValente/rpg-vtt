@@ -74,8 +74,8 @@ mod tests {
     #[test]
     fn loads_item_content_node_and_applies_its_effect_end_to_end() {
         let ruleset = load_ruleset(pack_dir().join("ruleset.json")).unwrap();
-        let gauntlets = load_content_node(pack_dir().join("items/gauntlets_of_ogre_power.json"))
-            .unwrap();
+        let gauntlets =
+            load_content_node(pack_dir().join("items/gauntlets_of_ogre_power.json")).unwrap();
 
         assert_eq!(gauntlets.presentation.name, "Luvas do Poder do Ogro");
         assert_eq!(gauntlets.node_type, "item");

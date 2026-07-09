@@ -22,7 +22,11 @@ impl fmt::Display for EngineError {
                 write!(f, "atributo desconhecido referenciado numa fórmula: '{id}'")
             }
             EngineError::CircularDependency(ids) => {
-                write!(f, "dependência circular entre DerivedRules: {}", ids.join(" -> "))
+                write!(
+                    f,
+                    "dependência circular entre DerivedRules: {}",
+                    ids.join(" -> ")
+                )
             }
             EngineError::Formula(e) => write!(f, "erro ao avaliar fórmula: {e}"),
         }

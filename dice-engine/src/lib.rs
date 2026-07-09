@@ -44,7 +44,11 @@ use parser::Parser;
 /// Usa `RandRoller` (aleatoriedade real) internamente. Para testes
 /// determinísticos, monte o pipeline manualmente com `parse_formula` +
 /// `evaluate_with_roller` e um `Roller` próprio.
-pub fn roll(formula: &str, ctx: &RollContext, policy: &RollPolicy) -> Result<RollResult, DiceError> {
+pub fn roll(
+    formula: &str,
+    ctx: &RollContext,
+    policy: &RollPolicy,
+) -> Result<RollResult, DiceError> {
     let expr = Parser::parse(formula)?;
     let mut roller = RandRoller::new();
     evaluator::evaluate(&expr, ctx, policy, &mut roller)

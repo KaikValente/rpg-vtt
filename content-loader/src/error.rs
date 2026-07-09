@@ -15,7 +15,10 @@ pub enum LoaderError {
     /// Tentativa de interpretar `mechanics.data` de um ContentNode como
     /// um tipo que não bate com o `type` declarado (ex: chamar
     /// `race_data()` num node que é `type: "item"`).
-    TypeMismatch { expected: String, actual: String },
+    TypeMismatch {
+        expected: String,
+        actual: String,
+    },
 }
 
 impl fmt::Display for LoaderError {
@@ -24,7 +27,10 @@ impl fmt::Display for LoaderError {
             LoaderError::Io(e) => write!(f, "erro de I/O ao ler pacote de conteúdo: {e}"),
             LoaderError::Json(e) => write!(f, "erro de JSON ao ler pacote de conteúdo: {e}"),
             LoaderError::UnknownOperation(op) => {
-                write!(f, "operation desconhecida num Effect: '{op}' (esperado: add, multiply, set)")
+                write!(
+                    f,
+                    "operation desconhecida num Effect: '{op}' (esperado: add, multiply, set)"
+                )
             }
             LoaderError::UnknownDuration(d) => {
                 write!(f, "duration desconhecida num Effect: '{d}'")
@@ -33,7 +39,10 @@ impl fmt::Display for LoaderError {
                 write!(f, "stacking desconhecido num Effect: '{s}' (esperado: stack, no_stack, highest_wins)")
             }
             LoaderError::TypeMismatch { expected, actual } => {
-                write!(f, "esperava ContentNode do tipo '{expected}', mas era '{actual}'")
+                write!(
+                    f,
+                    "esperava ContentNode do tipo '{expected}', mas era '{actual}'"
+                )
             }
         }
     }
