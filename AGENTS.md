@@ -33,6 +33,7 @@ Workspace Rust com crates separados:
 - engine-core: domínio genérico, Entity, AttributeDefinition, DerivedRule e Effect.
 - content-loader: lê content-packs JSON e converte para engine-core.
 - persistence-sqlite: persistência SQLite de estado canônico.
+- apps/desktop: aplicação desktop Tauri + React.
 - content-packs: conteúdo declarativo, começando por D&D 5e SRD.
 
 O fluxo é:
@@ -44,6 +45,9 @@ content-packs JSON
 
 persistence-sqlite salva e carrega estado canônico de campanhas e entidades,
 sem persistir valores derivados calculados pelo engine-core.
+
+apps/desktop é a camada de UI. A UI chama comandos Tauri, e os comandos
+orquestram os crates existentes sem mover regra de domínio para o frontend.
 
 ## Regras de arquitetura
 
@@ -76,6 +80,6 @@ Ao terminar uma tarefa:
 
 ## Fase atual
 
-Fase atual: Fase 5 — Persistência SQLite implementada.
+Fase atual: Fase 6 — UI: Ficha de Personagem implementada.
 
-Próxima fase planejada: Fase 6 — UI: Ficha de Personagem.
+Próxima fase planejada: Fase 7 — Campanhas e Combate básico.

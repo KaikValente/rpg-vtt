@@ -47,3 +47,7 @@ Essa decisão mantém a regra da arquitetura: salvar estado canônico, não valo
 - Não há runtime de combate, expiração automática de `Duration::Rounds` ou regras completas de stacking.
 
 Esses pontos ficam para fases futuras, quando houver fluxo real exigindo cada um.
+
+## Relação com a Fase 6
+
+A UI desktop já existe em `apps/desktop`, mas ainda não salva/carrega personagens reais por este crate. A integração entre ficha editável e persistência fica para uma fatia futura de campanhas/personagens.

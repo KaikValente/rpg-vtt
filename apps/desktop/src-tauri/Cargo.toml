@@ -1,0 +1,18 @@
+[package]
+name = "rpg-engine-desktop"
+version = "0.1.0"
+edition = "2021"
+description = "Tauri desktop app for RPG Engine character sheets."
+
+[lib]
+name = "rpg_engine_desktop"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[dependencies]
+content-loader = { path = "../../../content-loader" }
+engine-core = { path = "../../../engine-core" }
+serde = { version = "1", features = ["derive"] }
+tauri = { version = "2", features = [] }
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }

@@ -5,4 +5,5 @@ members = [
     "engine-core",
     "content-loader",
     "persistence-sqlite",
+    "apps/desktop/src-tauri",
 ]

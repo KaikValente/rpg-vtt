@@ -4,14 +4,13 @@ Domain Layer do RPG Engine — Fase 2. Consome o `dice-engine` (crate irmão) pr
 
 ## Status
 
-Código escrito e revisado à mão, **não compilado neste ambiente** (mesma limitação do `dice-engine`: sandbox sem toolchain Rust). Antes de considerar pronto:
+Implementado e validado pelo workspace. Para verificar:
 
 ```bash
-cd rpg-engine
 cargo test
 ```
 
-(Roda os testes de **todos** os crates do workspace — `dice-engine` e `engine-core` — de uma vez, porque agora tudo está sob um `Cargo.toml` de workspace na raiz.)
+(Roda os testes de **todos** os crates do workspace.)
 
 ## O que foi feito
 
@@ -80,6 +79,6 @@ Era: "divisão inteira trunca em direção a zero, não faz `floor()`", o que da
 - **Stacking de Effects não totalmente implementado.** Hoje os effects são aplicados na ordem em que estão na Entity, sem agrupar por `source`/`stacking`. A regra real ("bônus com mesmo nome não acumula, tipos diferentes acumulam") só vai ficar clara modelando magias/itens reais do SRD — especular ela agora seria inventar sem dado na frente, o que já rejeitamos antes nesse projeto.
 - **`Duration` não é consultado ainda.** O campo existe no `Effect`, mas nada no `engine-core` expira um effect automaticamente — isso é claramente Fase 7 (Runtime de combate), não Domain Core.
 
-## Próximo passo
+## Usado por
 
-Fase 3: `content-loader` — ler `ContentNode`/manifest de um pacote JSON e produzir `AttributeDefinition`/`DerivedRule`/`Effect` (os tipos deste crate) automaticamente, em vez de escrever tudo à mão como nos testes acima.
+O `content-loader` converte JSON para tipos deste crate. O `persistence-sqlite` salva/carrega estado canônico de `Entity`. O app desktop da Fase 6 usa `compute_attributes()` para montar a ficha de personagem.

@@ -4,10 +4,9 @@ Content Layer do RPG Engine — Fases 3 e 4. Lê arquivos JSON de um pacote de c
 
 ## Status
 
-Código escrito e revisado à mão, **não compilado neste ambiente**. Validar com:
+Implementado e validado pelo workspace. Para verificar:
 
 ```bash
-cd rpg-engine
 cargo test
 ```
 
@@ -61,7 +60,7 @@ O `Effect` de PV da classe usa a fórmula `"6 + (level-1)*4 + level*(CON-10)/2"`
 - **Content Registry** — ver ponto 4 acima.
 - **Stacking de Effects e Duration::Rounds** — mesmas limitações já documentadas na Fase 3, ainda válidas.
 
-## Próximo passo
+## Usado por
 
-Fase 5: Persistência (SQLite) — salvar o resultado de `compute_attributes` (ou melhor, o `Entity` + quais ContentNodes estão aplicados) numa Campaign de verdade, em vez de reconstruir tudo em memória a cada `cargo test`.
+O app desktop da Fase 6 usa este crate para carregar o content pack `dnd5e-core` e montar a ficha inicial do Humano Mago nível 1. A resolução de referências ainda é manual até existir um Content Registry.
 

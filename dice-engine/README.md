@@ -6,14 +6,11 @@ Não sabe o que é D&D, Pathfinder ou qualquer outro sistema. Sabe só: ler uma 
 
 ## Status
 
-Código escrito e revisado à mão, mas **não compilado neste ambiente** (sandbox sem toolchain Rust instalado). Antes de considerar pronto, rode:
+Implementado e validado pelo workspace. Para verificar:
 
 ```bash
-cd dice-engine
 cargo test
 ```
-
-Se algo não compilar, os pontos mais prováveis de erro estão listados no fim deste README, em "Pontos de atenção para a primeira compilação".
 
 ## O que foi feito
 
@@ -108,14 +105,6 @@ Consistente com o critério de mudança da arquitetura ("resolve o caso real de 
 - Pratt parser — a gramática tem só 2 níveis de precedência; recursive descent é igualmente correto e mais simples de ler.
 - Qualquer noção de sistema de RPG dentro do crate — isso é responsabilidade do content-pack (Fase 4), nunca do dice-engine.
 
-## Pontos de atenção para a primeira compilação
+## Usado por
 
-Como não rodei `cargo test` aqui, esses são os lugares onde um erro de digitação teria mais chance de aparecer:
-
-1. **`evaluator.rs`** — a flag `advantage_applied: &mut bool` passa por referência através da recursão de `eval_node`. Se o borrow checker reclamar, é o primeiro lugar a olhar.
-2. **`rng.rs`** — `FixedRoller` só existe sob `#[cfg(test)]`. Se `evaluator.rs` não achar `FixedRoller` ao rodar os testes, confirme que o `use crate::rng::FixedRoller;` está dentro de um `mod tests { ... }` também marcado `#[cfg(test)]`.
-3. **`Cargo.toml`** — dependência única é `rand = "0.8"`. Se a versão resolvida vier diferente (`0.9`, por exemplo), a API de `thread_rng()`/`gen_range()` pode ter mudado — nesse caso, ajuste `rng.rs` conforme o erro do compilador indicar.
-
-## Próximo passo
-
-Fase 2 do plano: `engine-core` (Domain Layer — `Entity`, `AttributeDefinition`, `DerivedRule`, `Effect`), que vai consumir este crate para avaliar as fórmulas dos `Effect`s de conteúdo.
+O `engine-core` usa este crate para avaliar fórmulas de `DerivedRule` e `Effect`. A aplicação desktop da Fase 6 consome o resultado indiretamente via `engine-core`.
