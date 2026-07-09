@@ -1,0 +1,11 @@
+[package]
+name = "dice-engine"
+version = "0.1.0"
+edition = "2021"
+description = "Motor de rolagem de dados independente, agnóstico de sistema de RPG."
+
+[dependencies]
+rand = "0.8"
+
+[dev-dependencies]
+# nada por enquanto — testes usam só a stdlib + rand

@@ -1,0 +1,21 @@
+{
+  "id": "dnd5e",
+  "attributes": [
+    { "id": "level", "label": "Nível", "default": 1 },
+    { "id": "STR", "label": "Força", "default": 10 },
+    { "id": "DEX", "label": "Destreza", "default": 10 },
+    { "id": "CON", "label": "Constituição", "default": 10 },
+    { "id": "INT", "label": "Inteligência", "default": 10 },
+    { "id": "WIS", "label": "Sabedoria", "default": 10 },
+    { "id": "CHA", "label": "Carisma", "default": 10 }
+  ],
+  "derived_rules": [
+    { "id": "str_mod", "formula": "(STR-10)/2" },
+    { "id": "dex_mod", "formula": "(DEX-10)/2" },
+    { "id": "con_mod", "formula": "(CON-10)/2" },
+    { "id": "int_mod", "formula": "(INT-10)/2" },
+    { "id": "wis_mod", "formula": "(WIS-10)/2" },
+    { "id": "cha_mod", "formula": "(CHA-10)/2" },
+    { "id": "prof_bonus", "formula": "2 + (level-1)/4" }
+  ]
+}

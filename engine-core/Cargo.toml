@@ -1,0 +1,8 @@
+[package]
+name = "engine-core"
+version = "0.1.0"
+edition = "2021"
+description = "Domain Layer do RPG Engine: Entity, AttributeDefinition, DerivedRule, Effect — agnóstico de sistema de RPG."
+
+[dependencies]
+dice-engine = { path = "../dice-engine" }

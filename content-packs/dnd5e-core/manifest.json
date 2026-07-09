@@ -1,0 +1,21 @@
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "slug": "dnd5e-core",
+  "name": "D&D 5e — SRD Core",
+  "version": "0.1.0",
+  "ruleset": "dnd5e",
+  "type": "core_system",
+  "author": "kaik",
+  "description": "Atributos e regras derivadas básicas do SRD 5.1, usadas para validar o Content Loader (Fase 3).",
+  "dependencies": [],
+  "created_at": "2026-07-09",
+  "updated_at": "2026-07-09",
+  "content_files": [
+    "ruleset.json",
+    "races/*.json",
+    "features/*.json",
+    "classes/*.json",
+    "spells/*.json",
+    "items/*.json"
+  ]
+}

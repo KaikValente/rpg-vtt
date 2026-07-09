@@ -1,0 +1,35 @@
+{
+  "id": "b3f1c2a0-6e3a-4c1a-9f2b-1a2b3c4d5e6f",
+  "type": "item",
+  "metadata": {
+    "pack_id": "550e8400-e29b-41d4-a716-446655440000",
+    "version": "0.1.0",
+    "author": "kaik",
+    "created_at": "2026-07-09",
+    "updated_at": "2026-07-09",
+    "dependencies": []
+  },
+  "presentation": {
+    "name": "Luvas do Poder do Ogro",
+    "slug": "gauntlets_of_ogre_power",
+    "description": "Sua pontuação de Força passa a ser 19 enquanto você usa estas luvas.",
+    "tags": ["wondrous_item", "attunement"],
+    "icon_asset": null
+  },
+  "mechanics": {
+    "data": {
+      "item_type": "magic_item",
+      "weight": 2,
+      "cost_gp": 0
+    },
+    "effects": [
+      {
+        "target": "STR",
+        "operation": "set",
+        "value": "19",
+        "duration": "until_unequipped",
+        "stacking": "highest_wins"
+      }
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+[package]
+name = "content-loader"
+version = "0.1.0"
+edition = "2021"
+description = "Content Layer do RPG Engine: lê manifest/ruleset/ContentNode de um pacote em JSON e converte para os tipos do Domain Layer (engine-core)."
+
+[dependencies]
+engine-core = { path = "../engine-core" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

@@ -1,0 +1,33 @@
+{
+  "id": "c1a2b3d4-0013-4a1a-9f2b-1a2b3c4d5e13",
+  "type": "spell",
+  "metadata": {
+    "pack_id": "550e8400-e29b-41d4-a716-446655440000",
+    "version": "0.1.0",
+    "author": "kaik",
+    "created_at": "2026-07-09",
+    "updated_at": "2026-07-09",
+    "dependencies": []
+  },
+  "presentation": {
+    "name": "Escudo",
+    "slug": "shield",
+    "description": "Uma barreira invisível de força mágica surge para te proteger.",
+    "tags": ["abjuration", "level_1", "defensive", "reaction"],
+    "icon_asset": null
+  },
+  "mechanics": {
+    "data": {
+      "level": 1,
+      "school": "abjuration",
+      "casting_time": "1 reaction",
+      "range": "self",
+      "components": ["V", "S"],
+      "duration": "1 round",
+      "damage_formula": null,
+      "damage_type": null,
+      "save": null
+    },
+    "effects": []
+  }
+}

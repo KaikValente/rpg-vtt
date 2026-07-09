@@ -1,0 +1,28 @@
+{
+  "id": "c1a2b3d4-0001-4a1a-9f2b-1a2b3c4d5e01",
+  "type": "race",
+  "metadata": {
+    "pack_id": "550e8400-e29b-41d4-a716-446655440000",
+    "version": "0.1.0",
+    "author": "kaik",
+    "created_at": "2026-07-09",
+    "updated_at": "2026-07-09",
+    "dependencies": []
+  },
+  "presentation": {
+    "name": "Humano",
+    "slug": "human",
+    "description": "Versáteis e ambiciosos, humanos são a raça mais numerosa e diversa do mundo.",
+    "tags": ["race"],
+    "icon_asset": null
+  },
+  "mechanics": {
+    "data": {
+      "size": "medium",
+      "speed": 30,
+      "languages": ["common"],
+      "traits": ["c1a2b3d4-0002-4a1a-9f2b-1a2b3c4d5e02"]
+    },
+    "effects": []
+  }
+}

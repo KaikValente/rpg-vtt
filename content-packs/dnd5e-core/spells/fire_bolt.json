@@ -1,0 +1,33 @@
+{
+  "id": "c1a2b3d4-0010-4a1a-9f2b-1a2b3c4d5e10",
+  "type": "spell",
+  "metadata": {
+    "pack_id": "550e8400-e29b-41d4-a716-446655440000",
+    "version": "0.1.0",
+    "author": "kaik",
+    "created_at": "2026-07-09",
+    "updated_at": "2026-07-09",
+    "dependencies": []
+  },
+  "presentation": {
+    "name": "Raio de Fogo",
+    "slug": "fire_bolt",
+    "description": "Você arremessa um raio de fogo em uma criatura ou objeto ao alcance.",
+    "tags": ["evocation", "cantrip", "fire", "attack"],
+    "icon_asset": null
+  },
+  "mechanics": {
+    "data": {
+      "level": 0,
+      "school": "evocation",
+      "casting_time": "1 action",
+      "range": "120 feet",
+      "components": ["V", "S"],
+      "duration": "instantaneous",
+      "damage_formula": "1d10",
+      "damage_type": "fire",
+      "save": null
+    },
+    "effects": []
+  }
+}

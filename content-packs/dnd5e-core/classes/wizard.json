@@ -1,0 +1,35 @@
+{
+  "id": "c1a2b3d4-0003-4a1a-9f2b-1a2b3c4d5e03",
+  "type": "class",
+  "metadata": {
+    "pack_id": "550e8400-e29b-41d4-a716-446655440000",
+    "version": "0.1.0",
+    "author": "kaik",
+    "created_at": "2026-07-09",
+    "updated_at": "2026-07-09",
+    "dependencies": []
+  },
+  "presentation": {
+    "name": "Mago",
+    "slug": "wizard",
+    "description": "Estudiosos da magia arcana, moldam a realidade através de fórmulas e gestos precisos.",
+    "tags": ["class"],
+    "icon_asset": null
+  },
+  "mechanics": {
+    "data": {
+      "hit_dice": "d6",
+      "primary_attribute": "INT",
+      "saving_throw_proficiencies": ["INT", "WIS"]
+    },
+    "effects": [
+      {
+        "target": "hp_max",
+        "operation": "set",
+        "value": "6 + (level-1)*4 + level*(CON-10)/2",
+        "duration": "permanent",
+        "stacking": "stack"
+      }
+    ]
+  }
+}

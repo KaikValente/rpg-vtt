@@ -1,0 +1,33 @@
+{
+  "id": "c1a2b3d4-0002-4a1a-9f2b-1a2b3c4d5e02",
+  "type": "feature",
+  "metadata": {
+    "pack_id": "550e8400-e29b-41d4-a716-446655440000",
+    "version": "0.1.0",
+    "author": "kaik",
+    "created_at": "2026-07-09",
+    "updated_at": "2026-07-09",
+    "dependencies": []
+  },
+  "presentation": {
+    "name": "Versatilidade Humana",
+    "slug": "human_ability_score_increase",
+    "description": "Todos os seus atributos aumentam em 1.",
+    "tags": ["race_trait"],
+    "icon_asset": null
+  },
+  "mechanics": {
+    "data": {
+      "source": "race",
+      "level_requirement": 1
+    },
+    "effects": [
+      { "target": "STR", "operation": "add", "value": "1", "duration": "permanent", "stacking": "stack" },
+      { "target": "DEX", "operation": "add", "value": "1", "duration": "permanent", "stacking": "stack" },
+      { "target": "CON", "operation": "add", "value": "1", "duration": "permanent", "stacking": "stack" },
+      { "target": "INT", "operation": "add", "value": "1", "duration": "permanent", "stacking": "stack" },
+      { "target": "WIS", "operation": "add", "value": "1", "duration": "permanent", "stacking": "stack" },
+      { "target": "CHA", "operation": "add", "value": "1", "duration": "permanent", "stacking": "stack" }
+    ]
+  }
+}
