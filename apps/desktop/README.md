@@ -23,6 +23,8 @@ O frontend chama comandos Tauri. O backend Tauri orquestra os crates existentes 
 - Comando `load_character_sheet`.
 - Campanha local padrao criada/carregada via `persistence-sqlite`.
 - Personagem inicial Humano Mago nivel 1 salvo como estado canonico e depois recalculado usando o content pack `dnd5e-core`.
+- Comando `roll_formula`, que expoe o `dice-engine` para rolagens soltas com vantagem/desvantagem.
+- Painel de dados com dado visual, botoes d4/d6/d8/d10/d12/d20/d100, formula livre e breakdown da rolagem.
 - Comandos `start_basic_combat` e `advance_combat_turn`.
 - Painel de combate com participantes, iniciativa e turno atual.
 - Comando `load_bestiary`.
@@ -66,6 +68,7 @@ cargo test
 - Ainda nao ha edicao da ficha pela UI.
 - Ainda nao ha selecao de campanha/personagem salvo; existe apenas uma campanha local padrao.
 - Homebrew tooling cobre apenas criacao simples de monstro; ainda nao edita/remove conteudo existente.
+- O rolador de dados ainda e solto; nao resolve variaveis de personagem como `STR` ou `PROF`.
 - O bestiario ainda e uma listagem simples; o combate inicial usa o Goblin do content-pack, mas ainda nao transforma qualquer monstro escolhido em NPC completo automaticamente.
 - O mapa ainda e minimo: nao ha assets, paredes, iluminacao, fog of war, medida de distancia ou multiplayer.
 - O combate ainda e minimo: nao ha ataques, dano, condicoes, expiracao de efeitos por rodada ou bestiario completo.

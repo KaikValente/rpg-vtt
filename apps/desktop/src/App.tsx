@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import DiceRoller from "./DiceRoller";
 
 type AbilityScore = {
   id: string;
@@ -330,6 +331,8 @@ function App() {
       </section>
 
       <section className="workspace-grid">
+        <DiceRoller />
+
         <section className="panel">
           <div className="panel-heading">
             <h2>Magias</h2>

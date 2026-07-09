@@ -10,6 +10,7 @@ pub fn run() {
             commands::load_bestiary,
             commands::load_character_sheet,
             commands::move_map_token,
+            commands::roll_formula,
             commands::start_basic_combat
         ])
         .run(tauri::generate_context!())

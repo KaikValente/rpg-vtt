@@ -2524,6 +2524,7 @@ name = "rpg-engine-desktop"
 version = "0.1.0"
 dependencies = [
  "content-loader",
+ "dice-engine",
  "engine-core",
  "persistence-sqlite",
  "serde",

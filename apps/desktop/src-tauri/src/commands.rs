@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use content_loader::{load_content_node, load_content_nodes_from_dir, load_ruleset, MonsterData};
+use dice_engine::{RollContext, RollPolicy};
 use engine_core::{compute_attributes, Entity};
 use persistence_sqlite::{
     Campaign, CombatEncounter, CombatParticipant, MapScene, MapToken, SqliteStore,
@@ -123,6 +124,14 @@ pub struct MonsterActionSummary {
     damage_type: Option<String>,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DiceRollSummary {
+    formula: String,
+    total: i64,
+    breakdown: String,
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HomebrewMonsterDraft {
@@ -188,6 +197,27 @@ pub fn create_homebrew_monster(
     let homebrew_dir = homebrew_monsters_dir(&app).map_err(|error| error.to_string())?;
     save_homebrew_monster(&homebrew_dir, draft).map_err(|error| error.to_string())?;
     build_bestiary(Some(homebrew_dir)).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn roll_formula(
+    formula: String,
+    advantage: bool,
+    disadvantage: bool,
+) -> Result<DiceRollSummary, String> {
+    let ctx = RollContext::new();
+    let policy = match (advantage, disadvantage) {
+        (true, true) | (false, false) => RollPolicy::normal(),
+        (true, false) => RollPolicy::with_advantage(),
+        (false, true) => RollPolicy::with_disadvantage(),
+    };
+    let result = dice_engine::roll(&formula, &ctx, &policy).map_err(|error| error.to_string())?;
+
+    Ok(DiceRollSummary {
+        formula,
+        total: result.total,
+        breakdown: result.describe(),
+    })
 }
 
 #[tauri::command]
@@ -884,6 +914,22 @@ mod tests {
         assert_eq!(homebrew.actions[0].name, "Mordida");
 
         std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn rolls_a_d20_formula_within_valid_range() {
+        let result = roll_formula("1d20".to_string(), false, false).unwrap();
+
+        assert_eq!(result.formula, "1d20");
+        assert!(result.total >= 1 && result.total <= 20);
+        assert!(!result.breakdown.is_empty());
+    }
+
+    #[test]
+    fn rejects_invalid_formula_with_readable_error() {
+        let err = roll_formula("1d20 & STR".to_string(), false, false).unwrap_err();
+
+        assert!(!err.is_empty());
     }
 
     #[test]
