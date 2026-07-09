@@ -16,7 +16,7 @@ rpg-engine/
 ├── apps/
 │   └── desktop/            # Fase 6 — app Tauri + React (Ficha de Personagem)
 └── content-packs/         # dados de conteúdo (JSON), não código
-    └── dnd5e-core/         # ruleset + 1 raça + 1 feature + 1 classe + 4 magias + 3 itens
+    └── dnd5e-core/         # ruleset + raça, feature, classe, magias, itens e monstro inicial
 ```
 
 Cada crate tem seu próprio README detalhando o que foi feito e como funciona.
@@ -46,6 +46,6 @@ npm run tauri dev
 - [x] **Fase 5 — Persistência SQLite.** Novo crate `persistence-sqlite` salva campanhas, entidades, atributos base explícitos e effects ativos. Não persiste valores derivados de `compute_attributes`; eles continuam sendo recalculados pelo `engine-core`.
 - [x] **Fase 6 — UI: Ficha de Personagem.** App desktop Tauri + React em `apps/desktop`, com comando Tauri que monta a ficha do Humano Mago nível 1 usando `content-loader` + `engine-core`.
 - [x] **Fase 7 — Campanhas e Combate básico.** App desktop cria/carrega campanha local via `persistence-sqlite`, salva o personagem inicial como estado canônico, recalcula a ficha a partir do estado salvo e oferece combate mínimo com participantes, iniciativa e avanço de turno.
-- [ ] Fase 8 — Bestiário e NPCs
+- [x] **Fase 8 — Bestiário baseado em content-packs.** `content-loader` interpreta `monster`, o content pack `dnd5e-core` inclui um monstro inicial em JSON, e o app desktop lista o bestiário via comando Tauri sem hardcode de monstros ou regra de D&D no `engine-core`.
 - [ ] Fase 9 — Mapas (básico)
 - [ ] Fase 10 — Homebrew tooling

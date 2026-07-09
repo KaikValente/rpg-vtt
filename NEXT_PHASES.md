@@ -1,14 +1,16 @@
 # Proximas Fases
 
-Resumo pratico para continuar o RPG Engine depois da Fase 6.
+Resumo pratico para continuar o RPG Engine depois da Fase 8.
 
 ## Estado atual
 
 - Fase 1: `dice-engine` pronto para formulas e rolagens auditaveis.
 - Fase 2: `engine-core` calcula atributos a partir de `Entity`, `Effect` e `DerivedRule`.
 - Fases 3-4: `content-loader` carrega o content pack `dnd5e-core`.
-- Fase 5: `persistence-sqlite` salva estado canonico de campanhas e entidades.
-- Fase 6: `apps/desktop` exibe uma ficha inicial via Tauri + React.
+- Fase 5: `persistence-sqlite` salva estado canonico de campanhas, entidades e effects ativos.
+- Fase 6: `apps/desktop` exibe a ficha inicial via Tauri + React.
+- Fase 7: `apps/desktop` cria/carrega uma campanha local, persiste o personagem inicial, recalcula a ficha a partir do estado salvo e oferece combate minimo com participantes, iniciativa e turno atual.
+- Fase 8: bestiario baseado em content-packs. `content-loader` interpreta `monster`, `dnd5e-core` contem um monstro inicial em JSON, e o app desktop lista monstros via comando Tauri.
 
 ## Regras que continuam valendo
 
@@ -16,36 +18,38 @@ Resumo pratico para continuar o RPG Engine depois da Fase 6.
 - `engine-core` nunca conhece D&D.
 - `content-loader` continua sendo a fronteira com JSON/content packs.
 - `apps/desktop` nao calcula regra de dominio; chama comandos Tauri.
-- Persistencia salva estado canonico, nao valores derivados.
+- Persistencia salva estado canonico/operacional minimo, nao valores derivados.
 - Content packs sao dados, nao codigo.
+- Conteudo criado por homebrew tooling ou importado no futuro deve entrar como content-pack compativel.
+- Monstros nao devem ser cadastrados diretamente no codigo.
 
-## Proxima fase: Campanhas e combate basico
+## Proxima fase: Mapas basicos
 
-Objetivo recomendado da Fase 7:
+Objetivo recomendado da Fase 9:
 
-- permitir criar/carregar uma campanha;
-- persistir pelo menos um personagem real via `persistence-sqlite`;
-- conectar a UI com a persistencia;
-- iniciar um fluxo minimo de combate com participantes, iniciativa e turno atual;
-- recalcular ficha a partir do estado salvo, sem salvar atributos derivados.
+- criar uma infraestrutura minima de mapa/cena;
+- representar grid simples e tokens de participantes;
+- manter mapa como estado de campanha, nao regra de dominio no `engine-core`;
+- permitir posicionar pelo menos o personagem e um monstro do bestiario em uma cena;
+- nao implementar VTT avancado, fog of war, assets complexos ou multiplayer.
 
 O primeiro fluxo util deve ser pequeno:
 
 ```text
 abrir app
--> carregar/criar campanha
--> carregar personagem salvo
--> ver ficha calculada
+-> carregar campanha local
+-> ver ficha e bestiario
 -> iniciar combate simples
--> registrar iniciativa/turno
+-> abrir mapa basico
+-> ver/posicionar tokens em um grid
 ```
 
 ## Pendencias importantes
 
-- Integrar `apps/desktop` com `persistence-sqlite`.
+- Decidir o schema minimo de cena/mapa em `persistence-sqlite`.
+- Conectar monstro do bestiario a um participante/NPC real de combate.
 - Tornar a ficha editavel sem mover regra para React.
-- Criar algum indice/resolucao de ContentNode por id quando carregar referencias ficar incomodo.
-- Decidir onde vive o estado runtime de combate.
+- Criar algum indice/resolucao de `ContentNode` por id quando carregar referencias ficar incomodo.
 - Modelar expiracao de `Duration::Rounds` apenas quando houver turno/rodada real.
 - Implementar stacking completo de `Effect`s somente com casos concretos.
 
@@ -53,15 +57,19 @@ abrir app
 
 - Marketplace, plugins, multiplayer e IA.
 - Suporte real a varios sistemas.
+- Importacao de PDF.
+- Monstros hardcoded em Rust ou React.
 - Conteudo SRD em massa antes de melhorar infraestrutura.
 - Refactors grandes junto com feature nova.
 - Cache/persistencia de atributos derivados.
-- Regras de combate completas antes de uma iniciativa simples funcionar.
+- Regras completas de combate, ataques, dano e condicoes antes do mapa minimo funcionar.
+- Mapas avancados, iluminacao, fog of war ou upload de assets.
 
 ## Checklist antes de cada fase
 
 - Ler `AGENTS.md`.
 - Ler README da raiz e README dos crates tocados.
+- Ler `Cargo.toml` da raiz e dos crates tocados.
 - Explicar a mudanca antes de alterar arquitetura.
 - Manter testes pequenos cobrindo o fluxo real.
 - Rodar `cargo fmt`, `cargo clippy` e `cargo test`.

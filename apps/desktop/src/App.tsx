@@ -64,20 +64,45 @@ type CombatParticipantSummary = {
   isCurrentTurn: boolean;
 };
 
+type MonsterSummary = {
+  id: string;
+  name: string;
+  description: string;
+  size: string;
+  creatureType: string;
+  armorClass: number;
+  hitPoints: number;
+  speed: string;
+  challengeRating: string;
+  actions: MonsterActionSummary[];
+};
+
+type MonsterActionSummary = {
+  name: string;
+  attackBonus?: number | null;
+  damageFormula?: string | null;
+  damageType?: string | null;
+};
+
 function modifierText(value: number) {
   return value >= 0 ? `+${value}` : `${value}`;
 }
 
 function App() {
   const [workspace, setWorkspace] = useState<CampaignWorkspace | null>(null);
+  const [bestiary, setBestiary] = useState<MonsterSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [combatBusy, setCombatBusy] = useState(false);
 
   useEffect(() => {
-    invoke<CampaignWorkspace>("load_character_sheet")
-      .then((loaded) => {
-        setWorkspace(loaded);
+    Promise.all([
+      invoke<CampaignWorkspace>("load_character_sheet"),
+      invoke<MonsterSummary[]>("load_bestiary"),
+    ])
+      .then(([loadedWorkspace, loadedBestiary]) => {
+        setWorkspace(loadedWorkspace);
+        setBestiary(loadedBestiary);
         setError(null);
       })
       .catch((err) => {
@@ -272,6 +297,46 @@ function App() {
             </div>
           ) : (
             <p className="empty-state">Nenhum combate ativo.</p>
+          )}
+        </section>
+
+        <section className="panel">
+          <div className="panel-heading">
+            <h2>Bestiario</h2>
+          </div>
+          {bestiary.length > 0 ? (
+            <div className="monster-list">
+              {bestiary.map((monster) => (
+                <article className="monster-row" key={monster.id}>
+                  <div className="monster-title">
+                    <div>
+                      <strong>{monster.name}</strong>
+                      <span>
+                        {monster.size} {monster.creatureType} - ND{" "}
+                        {monster.challengeRating}
+                      </span>
+                    </div>
+                    <div className="monster-stats">
+                      <span>CA {monster.armorClass}</span>
+                      <span>PV {monster.hitPoints}</span>
+                    </div>
+                  </div>
+                  <p>{monster.description}</p>
+                  <div className="monster-actions">
+                    {monster.actions.map((action) => (
+                      <span key={action.name}>
+                        {action.name}
+                        {action.damageFormula
+                          ? ` ${action.damageFormula} ${action.damageType ?? ""}`
+                          : ""}
+                      </span>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="empty-state">Nenhum monstro no content-pack.</p>
           )}
         </section>
       </section>

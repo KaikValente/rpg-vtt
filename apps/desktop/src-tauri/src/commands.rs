@@ -2,7 +2,7 @@ use std::cmp::Reverse;
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use content_loader::{load_content_node, load_ruleset};
+use content_loader::{load_content_node, load_content_nodes_from_dir, load_ruleset};
 use engine_core::{compute_attributes, Entity};
 use persistence_sqlite::{Campaign, CombatEncounter, CombatParticipant, SqliteStore};
 use serde::Serialize;
@@ -93,11 +93,40 @@ pub struct CombatParticipantSummary {
     is_current_turn: bool,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MonsterSummary {
+    id: String,
+    name: String,
+    description: String,
+    size: String,
+    creature_type: String,
+    armor_class: i64,
+    hit_points: i64,
+    speed: String,
+    challenge_rating: String,
+    actions: Vec<MonsterActionSummary>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MonsterActionSummary {
+    name: String,
+    attack_bonus: Option<i64>,
+    damage_formula: Option<String>,
+    damage_type: Option<String>,
+}
+
 #[tauri::command]
 pub fn load_character_sheet(app: AppHandle) -> Result<CampaignWorkspace, String> {
     let db_path = app_database_path(&app).map_err(|error| error.to_string())?;
     let mut store = SqliteStore::open(db_path).map_err(|error| error.to_string())?;
     build_campaign_workspace(&mut store).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn load_bestiary() -> Result<Vec<MonsterSummary>, String> {
+    build_bestiary().map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -311,6 +340,37 @@ fn pack_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../content-packs/dnd5e-core")
 }
 
+fn build_bestiary() -> Result<Vec<MonsterSummary>, Box<dyn std::error::Error>> {
+    load_content_nodes_from_dir(pack_dir().join("monsters"))?
+        .into_iter()
+        .filter(|node| node.node_type == "monster")
+        .map(|node| {
+            let data = node.monster_data()?;
+            Ok(MonsterSummary {
+                id: node.id,
+                name: node.presentation.name,
+                description: node.presentation.description,
+                size: data.size,
+                creature_type: data.creature_type,
+                armor_class: data.armor_class,
+                hit_points: data.hit_points,
+                speed: data.speed,
+                challenge_rating: data.challenge_rating,
+                actions: data
+                    .actions
+                    .into_iter()
+                    .map(|action| MonsterActionSummary {
+                        name: action.name,
+                        attack_bonus: action.attack_bonus,
+                        damage_formula: action.damage_formula,
+                        damage_type: action.damage_type,
+                    })
+                    .collect(),
+            })
+        })
+        .collect()
+}
+
 fn ability_scores(computed: &HashMap<String, i64>) -> Vec<AbilityScore> {
     [
         ("STR", "Forca", "str_mod"),
@@ -436,5 +496,15 @@ mod tests {
             combat.current_turn_participant_id.as_deref(),
             Some("training-goblin-1")
         );
+    }
+
+    #[test]
+    fn loads_bestiary_from_content_pack_monsters() {
+        let monsters = build_bestiary().unwrap();
+
+        assert_eq!(monsters.len(), 1);
+        assert_eq!(monsters[0].name, "Goblin");
+        assert_eq!(monsters[0].armor_class, 15);
+        assert_eq!(monsters[0].actions.len(), 2);
     }
 }

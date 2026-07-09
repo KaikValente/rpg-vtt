@@ -17,8 +17,11 @@ mod manifest;
 mod ruleset_file;
 
 pub use content_node::{ContentNode, EffectDef, NodeMechanics, NodeMetadata, NodePresentation};
-pub use data_types::{ClassData, FeatureData, ItemData, RaceData, SpellData, WeaponData};
+pub use data_types::{
+    ClassData, FeatureData, ItemData, MonsterAbilityScores, MonsterActionData, MonsterData,
+    RaceData, SpellData, WeaponData,
+};
 pub use error::LoaderError;
-pub use loader::{load_content_node, load_manifest, load_ruleset};
+pub use loader::{load_content_node, load_content_nodes_from_dir, load_manifest, load_ruleset};
 pub use manifest::{Dependency, Manifest, PackType};
 pub use ruleset_file::{AttributeDef, DerivedRuleDef, RulesetFile};

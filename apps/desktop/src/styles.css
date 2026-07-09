@@ -289,6 +289,65 @@ h1 {
   margin: 0;
 }
 
+.monster-list {
+  display: grid;
+  gap: 12px;
+}
+
+.monster-row {
+  border-top: 1px solid #ebe5dc;
+  display: grid;
+  gap: 10px;
+  padding-top: 12px;
+}
+
+.monster-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.monster-title > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.monster-title strong {
+  color: #26333f;
+}
+
+.monster-title span,
+.monster-row p,
+.monster-actions span {
+  color: #65727e;
+  font-size: 0.82rem;
+}
+
+.monster-row p {
+  margin-bottom: 0;
+}
+
+.monster-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.monster-stats span,
+.monster-actions span {
+  border: 1px solid #d8d0c6;
+  background: #f8f4ed;
+  padding: 4px 7px;
+}
+
+.monster-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 @media (max-width: 860px) {
   .sheet-header {
     align-items: stretch;
@@ -335,5 +394,13 @@ h1 {
   .list-row > span {
     text-align: left;
     white-space: normal;
+  }
+
+  .monster-title {
+    flex-direction: column;
+  }
+
+  .monster-stats {
+    justify-content: flex-start;
   }
 }

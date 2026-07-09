@@ -80,6 +80,6 @@ Ao terminar uma tarefa:
 
 ## Fase atual
 
-Fase atual: Fase 6 — UI: Ficha de Personagem implementada.
+Fase atual: Fase 8 — Bestiário baseado em content-packs implementado.
 
-Próxima fase planejada: Fase 7 — Campanhas e Combate básico.
+Próxima fase planejada: Fase 9 — Mapas básicos.

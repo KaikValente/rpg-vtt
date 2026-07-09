@@ -25,7 +25,9 @@ O frontend chama comandos Tauri. O backend Tauri orquestra os crates existentes 
 - Personagem inicial Humano Mago nivel 1 salvo como estado canonico e depois recalculado usando o content pack `dnd5e-core`.
 - Comandos `start_basic_combat` e `advance_combat_turn`.
 - Painel de combate com participantes, iniciativa e turno atual.
-- Testes Rust garantindo que a ficha e montada a partir do estado salvo, que edicoes canonicas persistidas sao preservadas e que o combate basico avanca turno.
+- Comando `load_bestiary`.
+- Painel de bestiario carregando monstros do content-pack.
+- Testes Rust garantindo que a ficha e montada a partir do estado salvo, que edicoes canonicas persistidas sao preservadas, que o combate basico avanca turno e que o bestiario vem dos JSONs do content-pack.
 
 ## Rodando
 
@@ -58,4 +60,5 @@ cargo test
 
 - Ainda nao ha edicao da ficha pela UI.
 - Ainda nao ha selecao de campanha/personagem salvo; existe apenas uma campanha local padrao.
-- O combate ainda e minimo: nao ha ataques, dano, condicoes, expiracao de efeitos por rodada, mapas ou bestiario.
+- O bestiario ainda e uma listagem simples; nao transforma monstros em NPCs/participantes automaticamente.
+- O combate ainda e minimo: nao ha ataques, dano, condicoes, expiracao de efeitos por rodada, mapas ou bestiario completo.

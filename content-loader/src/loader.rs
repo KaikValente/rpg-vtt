@@ -32,6 +32,22 @@ pub fn load_content_node(path: impl AsRef<Path>) -> Result<ContentNode, LoaderEr
     Ok(node)
 }
 
+pub fn load_content_nodes_from_dir(dir: impl AsRef<Path>) -> Result<Vec<ContentNode>, LoaderError> {
+    let mut paths = fs::read_dir(dir)?
+        .map(|entry| entry.map(|entry| entry.path()))
+        .collect::<Result<Vec<_>, _>>()?;
+    paths.sort();
+
+    paths
+        .into_iter()
+        .filter(|path| {
+            path.extension()
+                .is_some_and(|extension| extension == "json")
+        })
+        .map(load_content_node)
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -94,6 +110,22 @@ mod tests {
         // item literalmente fixa a Força em 19, ignorando o valor base.
         assert_eq!(computed["STR"], 19);
         assert_eq!(computed["str_mod"], 4); // (19-10)/2 = 4
+    }
+
+    #[test]
+    fn loads_monster_content_nodes_from_pack_directory() {
+        let monsters = load_content_nodes_from_dir(pack_dir().join("monsters")).unwrap();
+        assert_eq!(monsters.len(), 1);
+
+        let goblin = &monsters[0];
+        assert_eq!(goblin.node_type, "monster");
+        assert_eq!(goblin.presentation.name, "Goblin");
+
+        let data = goblin.monster_data().unwrap();
+        assert_eq!(data.armor_class, 15);
+        assert_eq!(data.hit_points, 7);
+        assert_eq!(data.challenge_rating, "1/4");
+        assert_eq!(data.actions.len(), 2);
     }
 
     #[test]

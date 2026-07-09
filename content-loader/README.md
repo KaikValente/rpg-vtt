@@ -1,6 +1,6 @@
 # content-loader
 
-Content Layer do RPG Engine — Fases 3 e 4. Lê arquivos JSON de um pacote de conteúdo e converte pros tipos de domínio do `engine-core` (`AttributeDefinition`, `DerivedRule`, `Effect`), com interpretação tipada de `mechanics.data` por tipo de `ContentNode`.
+Content Layer do RPG Engine. Le arquivos JSON de um pacote de conteudo e converte para tipos usados pelas camadas acima, mantendo o `engine-core` livre de serde, filesystem e detalhes de D&D.
 
 ## Status
 
@@ -15,52 +15,51 @@ cargo test
 | Arquivo | Responsabilidade |
 |---|---|
 | `manifest.rs` | DTO de `manifest.json`. |
-| `ruleset_file.rs` | DTO de `ruleset.json` + conversão pra `engine_core::Ruleset`. |
-| `content_node.rs` | DTO genérico de `ContentNode` (metadata/presentation/mechanics) + conversão de `mechanics.effects` pra `Vec<engine_core::Effect>`. |
-| `data_types.rs` | **Novo na Fase 4.** `mechanics.data` tipado por `type`: `RaceData`, `FeatureData`, `ClassData`, `SpellData`, `ItemData`/`WeaponData`. Métodos `ContentNode::race_data()`, `::class_data()`, etc. |
-| `loader.rs` | Funções de entrada: `load_manifest`, `load_ruleset`, `load_content_node`. |
-| `error.rs` | `LoaderError`, incluindo `TypeMismatch` (novo — chamar `race_data()` num node que não é `race`). |
+| `ruleset_file.rs` | DTO de `ruleset.json` + conversao para `engine_core::Ruleset`. |
+| `content_node.rs` | DTO generico de `ContentNode` e conversao de `mechanics.effects` para `engine_core::Effect`. |
+| `data_types.rs` | `mechanics.data` tipado por `type`: `race`, `feature`, `class`, `spell`, `item` e `monster`. |
+| `loader.rs` | Entradas de leitura: `load_manifest`, `load_ruleset`, `load_content_node` e `load_content_nodes_from_dir`. |
+| `error.rs` | `LoaderError`, incluindo `TypeMismatch`. |
 
 ## Como funciona
 
-### 1. `data` tipado sob demanda, não polimórfico
+`ContentNode.mechanics.data` continua como `serde_json::Value` generico. Cada tipo ganha um metodo de conversao sob demanda: `race_data()`, `spell_data()`, `item_data()`, `monster_data()`, etc.
 
-`ContentNode.mechanics.data` continua sendo `serde_json::Value` genérico (decisão da Fase 3, mantida). Cada tipo ganha um método de conversão sob demanda: `node.race_data()`, `node.spell_data()`, etc. — cada um confere que `node_type` bate com o esperado antes de deserializar, e devolve `LoaderError::TypeMismatch` se não bater. Evita deserialização polimórfica (mais complexa em serde) e mantém adicionar um tipo novo isolado — só mais uma struct + um método.
+Cada metodo confere se `node_type` bate com o esperado antes de deserializar. Chamar `monster_data()` em um node que nao e `type: "monster"` retorna `LoaderError::TypeMismatch`.
 
-### 2. Fatia vertical: Humano Mago nível 1
+Esse desenho evita deserializacao polimorfica complexa e mantem cada novo tipo de conteudo isolado: uma struct de dados e um metodo no `ContentNode`.
 
-`content-packs/dnd5e-core/` agora tem conteúdo suficiente pra montar um personagem inteiro:
+## Bestiario
 
-```
-races/human.json               — raça, referencia 1 feature por id
-features/human_ability_score_increase.json  — +1 em todos os 6 atributos
-classes/wizard.json            — d6 de vida, INT primário, Effect de PV
-spells/fire_bolt.json          — truque, dano
-spells/mage_hand.json          — truque, utilidade
-spells/magic_missile.json      — 1º círculo, dano
-spells/shield.json             — 1º círculo, defensiva
-items/dagger.json              — arma simples
-items/component_pouch.json     — equipamento sem mecânica de combate
-```
+A Fase 8 adiciona infraestrutura de bestiario baseada em content-packs:
 
-O teste `content-loader/tests/character_slice.rs` carrega tudo isso, monta uma `Entity`, aplica os `Effect`s (raça primeiro, depois classe) e confirma que o resultado bate com a regra real do D&D 5e — inclusive **PV máximo = 8** pra um Mago humano nível 1 com Constituição 15 (14 base + 1 do traço racial).
+- monstros sao `ContentNode`s com `type: "monster"`;
+- os dados ficam em JSON dentro do content-pack;
+- `MonsterData` descreve o resumo necessario para listar/ver um monstro;
+- `load_content_nodes_from_dir` permite carregar todos os JSONs de uma pasta como `content-packs/dnd5e-core/monsters`;
+- nenhum monstro e cadastrado diretamente no codigo.
 
-### 3. Achado importante: ordem entre Effects e DerivedRules
+Isso deixa aberto o caminho para ferramentas futuras de homebrew ou importacao gerarem JSONs compativeis e aparecerem no mesmo bestiario. A importacao de PDF em si nao faz parte desta fase.
 
-O `Effect` de PV da classe usa a fórmula `"6 + (level-1)*4 + level*(CON-10)/2"` — repara que usa `CON` (atributo base), **não** `con_mod` (regra derivada). Isso não é estilo, é necessidade: `Effect`s rodam *antes* das `DerivedRule`s no `engine-core` (ver seção "Ordem de resolução" no README dele), então um Effect não pode depender de um valor derivado que ainda não foi calculado. Documentado aqui e no comentário do teste — é o tipo de restrição que só aparece implementando conteúdo real, exatamente como a arquitetura previu que aconteceria.
+## Conteudo atual do dnd5e-core
 
-### 4. Resolução de referência ainda é manual
+O pack `content-packs/dnd5e-core/` contem a fatia vertical inicial:
 
-`race.race_data().traits` guarda o **id** da feature que a raça concede — mas carregar esse id de verdade (`load_content_node` com o caminho certo) ainda é manual no teste, porque o Content Registry (índice em memória por id, arquitetura seção 1) ainda não existe. Só vale a pena construir quando o volume de conteúdo justificar — carregar 8 arquivos à mão num teste ainda é gerenciável.
+- `races/human.json`;
+- `features/human_ability_score_increase.json`;
+- `classes/wizard.json`;
+- quatro magias;
+- tres itens;
+- `monsters/goblin.json`.
 
-## O que ficou de fora (de propósito)
+## Limites atuais
 
-- **Progressão por nível** (`ClassData.levels`) — schema original da arquitetura previa isso; simplificado pra fora até existir um segundo nível de personagem pra validar contra.
-- **Mecânica de conjuração** — as 4 magias carregam e têm `spell_data()` tipado, mas nada usa `damage_formula` pra rolar dano de verdade ainda. Isso é Fase 7 (combate).
-- **Content Registry** — ver ponto 4 acima.
-- **Stacking de Effects e Duration::Rounds** — mesmas limitações já documentadas na Fase 3, ainda válidas.
+- Nao ha Content Registry nem resolucao automatica de referencias por id.
+- Nao ha importacao de PDF.
+- Nao ha bestiario massivo do SRD.
+- Nao ha transformacao de monstros em `Entity` de combate/NPC ainda.
+- Stacking completo de effects e expiracao de `Duration::Rounds` seguem para fluxos futuros.
 
 ## Usado por
 
-O app desktop da Fase 6 usa este crate para carregar o content pack `dnd5e-core` e montar a ficha inicial do Humano Mago nível 1. A resolução de referências ainda é manual até existir um Content Registry.
-
+O app desktop usa este crate para montar a ficha inicial, carregar conteudo exibido na UI e listar o bestiario a partir dos JSONs do content-pack.

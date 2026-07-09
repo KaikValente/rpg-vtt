@@ -88,6 +88,53 @@ pub struct ItemData {
     pub weapon: Option<WeaponData>,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+pub struct MonsterAbilityScores {
+    #[serde(rename = "STR")]
+    pub str_score: i64,
+    #[serde(rename = "DEX")]
+    pub dex_score: i64,
+    #[serde(rename = "CON")]
+    pub con_score: i64,
+    #[serde(rename = "INT")]
+    pub int_score: i64,
+    #[serde(rename = "WIS")]
+    pub wis_score: i64,
+    #[serde(rename = "CHA")]
+    pub cha_score: i64,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct MonsterActionData {
+    pub name: String,
+    pub description: String,
+    #[serde(default)]
+    pub attack_bonus: Option<i64>,
+    #[serde(default)]
+    pub damage_formula: Option<String>,
+    #[serde(default)]
+    pub damage_type: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct MonsterData {
+    pub size: String,
+    pub creature_type: String,
+    pub alignment: String,
+    pub armor_class: i64,
+    pub hit_points: i64,
+    pub hit_dice: String,
+    pub speed: String,
+    pub challenge_rating: String,
+    pub ability_scores: MonsterAbilityScores,
+    #[serde(default)]
+    pub senses: Vec<String>,
+    #[serde(default)]
+    pub languages: Vec<String>,
+    #[serde(default)]
+    pub actions: Vec<MonsterActionData>,
+}
+
 impl ContentNode {
     fn check_type(&self, expected: &str) -> Result<(), LoaderError> {
         if self.node_type == expected {
@@ -122,6 +169,11 @@ impl ContentNode {
 
     pub fn item_data(&self) -> Result<ItemData, LoaderError> {
         self.check_type("item")?;
+        Ok(serde_json::from_value(self.mechanics.data.clone())?)
+    }
+
+    pub fn monster_data(&self) -> Result<MonsterData, LoaderError> {
+        self.check_type("monster")?;
         Ok(serde_json::from_value(self.mechanics.data.clone())?)
     }
 }
