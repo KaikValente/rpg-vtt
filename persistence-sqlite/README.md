@@ -43,6 +43,8 @@ O crate persiste apenas estado canonico/operacional minimo:
 
 Valores calculados por `engine_core::compute_attributes()` **nao** sao salvos. Eles devem ser recalculados quando a ficha for carregada, usando o `Ruleset` atual e os efeitos ativos.
 
+Effects ativos salvos em `entity_effects` sao snapshots do momento em que entraram na `Entity`: o banco guarda `target`, `operation`, `value`, `source`, `duration` e `stacking`, nao apenas o id do `ContentNode` original. Se um content-pack mudar depois, personagens ja salvos nao recebem essa alteracao automaticamente; um fluxo futuro de migracao/sincronizacao deve tratar isso explicitamente.
+
 O estado operacional salvo aqui e propositalmente pequeno: ordem de iniciativa, participante do turno atual, cena de grid e posicao de tokens. Ele nao calcula regra de combate, nao expira `Duration::Rounds` automaticamente e nao salva atributos derivados/cache de ficha.
 
 Essa decisao mantem a regra da arquitetura: salvar estado canonico, nao valores derivados. Tambem mantem o `engine-core` agnostico de SQLite; o dominio so expoe os dados canonicos da `Entity`.

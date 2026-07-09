@@ -2,7 +2,7 @@ use std::cmp::Reverse;
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use content_loader::{load_content_node, load_content_nodes_from_dir, load_ruleset};
+use content_loader::{load_content_node, load_content_nodes_from_dir, load_ruleset, MonsterData};
 use engine_core::{compute_attributes, Entity};
 use persistence_sqlite::{
     Campaign, CombatEncounter, CombatParticipant, MapScene, MapToken, SqliteStore,
@@ -247,12 +247,14 @@ fn build_campaign_workspace(
     let ruleset = load_ruleset(pack_dir.join("ruleset.json"))?;
 
     let race = load_content_node(pack_dir.join("races/human.json"))?;
-    let _race_data = race.race_data()?;
+    // Validate the displayed content nodes early; mechanics are still applied
+    // from the saved canonical Entity state below.
+    race.race_data()?;
     let trait_node =
         load_content_node(pack_dir.join("features/human_ability_score_increase.json"))?;
 
     let class = load_content_node(pack_dir.join("classes/wizard.json"))?;
-    let _class_data = class.class_data()?;
+    class.class_data()?;
 
     let campaign = ensure_default_campaign(store)?;
     ensure_default_character(store, &campaign, &trait_node, &class)?;
@@ -380,6 +382,7 @@ fn ensure_default_character(
 
 fn start_default_combat(store: &mut SqliteStore) -> Result<(), Box<dyn std::error::Error>> {
     let campaign = ensure_default_campaign(store)?;
+    let goblin = load_default_goblin_participant()?;
     let mut combat = CombatEncounter::new(
         DEFAULT_COMBAT_ID,
         campaign.id,
@@ -390,7 +393,7 @@ fn start_default_combat(store: &mut SqliteStore) -> Result<(), Box<dyn std::erro
                 DEFAULT_CHARACTER_NAME,
                 15,
             ),
-            CombatParticipant::new("training-goblin-1", None, "Goblin de treino", 12),
+            goblin,
         ],
     );
     combat
@@ -398,6 +401,27 @@ fn start_default_combat(store: &mut SqliteStore) -> Result<(), Box<dyn std::erro
         .sort_by_key(|participant| Reverse(participant.initiative));
     store.save_combat_encounter(&combat)?;
     Ok(())
+}
+
+fn load_default_goblin_participant() -> Result<CombatParticipant, Box<dyn std::error::Error>> {
+    let node = load_content_node(pack_dir().join("monsters/goblin.json"))?;
+    let data = node.monster_data()?;
+    let initiative = passive_initiative(&data);
+
+    Ok(CombatParticipant::new(
+        "training-goblin-1",
+        None,
+        node.presentation.name,
+        initiative,
+    ))
+}
+
+fn passive_initiative(monster: &MonsterData) -> i64 {
+    10 + ability_modifier(monster.ability_scores.dex_score)
+}
+
+fn ability_modifier(score: i64) -> i64 {
+    (score - 10).div_euclid(2)
 }
 
 fn ensure_default_map_scene(store: &mut SqliteStore) -> Result<(), Box<dyn std::error::Error>> {
@@ -463,7 +487,7 @@ fn build_bestiary() -> Result<Vec<MonsterSummary>, Box<dyn std::error::Error>> {
                 creature_type: data.creature_type,
                 armor_class: data.armor_class,
                 hit_points: data.hit_points,
-                speed: data.speed,
+                speed: format!("{} ft.", data.speed),
                 challenge_rating: data.challenge_rating,
                 actions: data
                     .actions
@@ -611,6 +635,8 @@ mod tests {
         assert_eq!(combat.current_turn_index, 0);
         assert_eq!(combat.participants.len(), 2);
         assert_eq!(combat.participants[0].name, DEFAULT_CHARACTER_NAME);
+        assert_eq!(combat.participants[1].name, "Goblin");
+        assert_eq!(combat.participants[1].initiative, 12);
         assert!(combat.participants[0].is_current_turn);
 
         let mut saved = store
@@ -636,6 +662,8 @@ mod tests {
         assert_eq!(monsters.len(), 1);
         assert_eq!(monsters[0].name, "Goblin");
         assert_eq!(monsters[0].armor_class, 15);
+        assert_eq!(monsters[0].hit_points, 7);
+        assert_eq!(monsters[0].speed, "30 ft.");
         assert_eq!(monsters[0].actions.len(), 2);
     }
 

@@ -24,7 +24,7 @@
       "armor_class": 15,
       "hit_points": 7,
       "hit_dice": "2d6",
-      "speed": "30 ft.",
+      "speed": 30,
       "challenge_rating": "1/4",
       "ability_scores": {
         "STR": 8,

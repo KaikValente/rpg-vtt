@@ -124,7 +124,7 @@ pub struct MonsterData {
     pub armor_class: i64,
     pub hit_points: i64,
     pub hit_dice: String,
-    pub speed: String,
+    pub speed: i64,
     pub challenge_rating: String,
     pub ability_scores: MonsterAbilityScores,
     #[serde(default)]

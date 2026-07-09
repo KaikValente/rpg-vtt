@@ -36,6 +36,7 @@ A Fase 8 adiciona infraestrutura de bestiario baseada em content-packs:
 - monstros sao `ContentNode`s com `type: "monster"`;
 - os dados ficam em JSON dentro do content-pack;
 - `MonsterData` descreve o resumo necessario para listar/ver um monstro;
+- `speed` de monstros usa numero em pes, no mesmo formato canonico de racas;
 - `load_content_nodes_from_dir` permite carregar todos os JSONs de uma pasta como `content-packs/dnd5e-core/monsters`;
 - nenhum monstro e cadastrado diretamente no codigo.
 
