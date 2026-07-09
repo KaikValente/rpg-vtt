@@ -13,6 +13,7 @@ content-loader = { path = "../../../content-loader" }
 engine-core = { path = "../../../engine-core" }
 persistence-sqlite = { path = "../../../persistence-sqlite" }
 serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 tauri = { version = "2", features = [] }
 
 [build-dependencies]

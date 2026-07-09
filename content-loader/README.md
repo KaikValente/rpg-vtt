@@ -42,6 +42,8 @@ A Fase 8 adiciona infraestrutura de bestiario baseada em content-packs:
 
 Isso deixa aberto o caminho para ferramentas futuras de homebrew ou importacao gerarem JSONs compativeis e aparecerem no mesmo bestiario. A importacao de PDF em si nao faz parte desta fase.
 
+Na Fase 10, o app desktop comeca a gravar monstros homebrew locais usando o mesmo envelope `ContentNode` e valida o JSON gerado carregando-o novamente por este crate. O `content-loader` continua sem saber se o arquivo veio do pack oficial ou de uma ferramenta de homebrew.
+
 ## Conteudo atual do dnd5e-core
 
 O pack `content-packs/dnd5e-core/` contem a fatia vertical inicial:

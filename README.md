@@ -48,4 +48,4 @@ npm run tauri dev
 - [x] **Fase 7 — Campanhas e Combate básico.** App desktop cria/carrega campanha local via `persistence-sqlite`, salva o personagem inicial como estado canônico, recalcula a ficha a partir do estado salvo e oferece combate mínimo com participantes, iniciativa e avanço de turno.
 - [x] **Fase 8 — Bestiário baseado em content-packs.** `content-loader` interpreta `monster`, o content pack `dnd5e-core` inclui um monstro inicial em JSON, e o app desktop lista o bestiário via comando Tauri sem hardcode de monstros ou regra de D&D no `engine-core`.
 - [x] **Fase 9 — Mapas (básico).** `persistence-sqlite` salva cenas simples de campanha com grid e tokens, e o app desktop abre uma cena inicial com personagem/monstro do combate para posicionamento em mapa.
-- [ ] Fase 10 — Homebrew tooling
+- [ ] **Fase 10 — Homebrew tooling.** Primeira fatia: criação simples de monstro homebrew local como JSON compatível com `ContentNode`, validado pelo `content-loader` e listado no bestiário junto com o conteúdo oficial.

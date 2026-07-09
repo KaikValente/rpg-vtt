@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
 type AbilityScore = {
@@ -85,6 +85,27 @@ type MonsterActionSummary = {
   damageType?: string | null;
 };
 
+type HomebrewMonsterDraft = {
+  name: string;
+  description: string;
+  size: string;
+  creatureType: string;
+  armorClass: number;
+  hitPoints: number;
+  speed: number;
+  challengeRating: string;
+  strScore: number;
+  dexScore: number;
+  conScore: number;
+  intScore: number;
+  wisScore: number;
+  chaScore: number;
+  actionName: string;
+  attackBonus: number;
+  damageFormula: string;
+  damageType: string;
+};
+
 type MapSceneSummary = {
   id: string;
   name: string;
@@ -106,6 +127,27 @@ function modifierText(value: number) {
   return value >= 0 ? `+${value}` : `${value}`;
 }
 
+const initialHomebrewDraft: HomebrewMonsterDraft = {
+  name: "",
+  description: "",
+  size: "Small",
+  creatureType: "humanoid",
+  armorClass: 12,
+  hitPoints: 7,
+  speed: 30,
+  challengeRating: "1/8",
+  strScore: 10,
+  dexScore: 10,
+  conScore: 10,
+  intScore: 10,
+  wisScore: 10,
+  chaScore: 10,
+  actionName: "Ataque",
+  attackBonus: 2,
+  damageFormula: "1d6",
+  damageType: "bludgeoning",
+};
+
 function App() {
   const [workspace, setWorkspace] = useState<CampaignWorkspace | null>(null);
   const [bestiary, setBestiary] = useState<MonsterSummary[]>([]);
@@ -113,7 +155,10 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [combatBusy, setCombatBusy] = useState(false);
   const [mapBusy, setMapBusy] = useState(false);
+  const [homebrewBusy, setHomebrewBusy] = useState(false);
   const [selectedTokenId, setSelectedTokenId] = useState<string | null>(null);
+  const [homebrewDraft, setHomebrewDraft] =
+    useState<HomebrewMonsterDraft>(initialHomebrewDraft);
 
   useEffect(() => {
     Promise.all([
@@ -177,6 +222,27 @@ function App() {
       })
       .finally(() => {
         setMapBusy(false);
+      });
+  }
+
+  function updateHomebrew(key: keyof HomebrewMonsterDraft, value: string | number) {
+    setHomebrewDraft((current) => ({ ...current, [key]: value }));
+  }
+
+  function createHomebrewMonster(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setHomebrewBusy(true);
+    invoke<MonsterSummary[]>("create_homebrew_monster", { draft: homebrewDraft })
+      .then((loadedBestiary) => {
+        setBestiary(loadedBestiary);
+        setHomebrewDraft(initialHomebrewDraft);
+        setError(null);
+      })
+      .catch((err) => {
+        setError(String(err));
+      })
+      .finally(() => {
+        setHomebrewBusy(false);
       });
   }
 
@@ -444,6 +510,133 @@ function App() {
           <div className="panel-heading">
             <h2>Bestiario</h2>
           </div>
+          <form className="homebrew-form" onSubmit={createHomebrewMonster}>
+            <div className="form-grid">
+              <label>
+                <span>Nome</span>
+                <input
+                  required
+                  value={homebrewDraft.name}
+                  onChange={(event) => updateHomebrew("name", event.target.value)}
+                />
+              </label>
+              <label>
+                <span>Tipo</span>
+                <input
+                  required
+                  value={homebrewDraft.creatureType}
+                  onChange={(event) =>
+                    updateHomebrew("creatureType", event.target.value)
+                  }
+                />
+              </label>
+              <label>
+                <span>Tamanho</span>
+                <select
+                  value={homebrewDraft.size}
+                  onChange={(event) => updateHomebrew("size", event.target.value)}
+                >
+                  <option>Tiny</option>
+                  <option>Small</option>
+                  <option>Medium</option>
+                  <option>Large</option>
+                  <option>Huge</option>
+                  <option>Gargantuan</option>
+                </select>
+              </label>
+              <label>
+                <span>ND</span>
+                <input
+                  required
+                  value={homebrewDraft.challengeRating}
+                  onChange={(event) =>
+                    updateHomebrew("challengeRating", event.target.value)
+                  }
+                />
+              </label>
+            </div>
+            <label>
+              <span>Descricao</span>
+              <textarea
+                rows={2}
+                value={homebrewDraft.description}
+                onChange={(event) =>
+                  updateHomebrew("description", event.target.value)
+                }
+              />
+            </label>
+            <div className="number-grid">
+              {[
+                ["CA", "armorClass"],
+                ["PV", "hitPoints"],
+                ["Desloc.", "speed"],
+                ["STR", "strScore"],
+                ["DEX", "dexScore"],
+                ["CON", "conScore"],
+                ["INT", "intScore"],
+                ["WIS", "wisScore"],
+                ["CHA", "chaScore"],
+              ].map(([label, key]) => (
+                <label key={key}>
+                  <span>{label}</span>
+                  <input
+                    min={key === "speed" ? 0 : 1}
+                    required
+                    type="number"
+                    value={homebrewDraft[key as keyof HomebrewMonsterDraft] as number}
+                    onChange={(event) =>
+                      updateHomebrew(key as keyof HomebrewMonsterDraft, Number(event.target.value))
+                    }
+                  />
+                </label>
+              ))}
+            </div>
+            <div className="form-grid">
+              <label>
+                <span>Acao</span>
+                <input
+                  required
+                  value={homebrewDraft.actionName}
+                  onChange={(event) =>
+                    updateHomebrew("actionName", event.target.value)
+                  }
+                />
+              </label>
+              <label>
+                <span>Ataque</span>
+                <input
+                  type="number"
+                  value={homebrewDraft.attackBonus}
+                  onChange={(event) =>
+                    updateHomebrew("attackBonus", Number(event.target.value))
+                  }
+                />
+              </label>
+              <label>
+                <span>Dano</span>
+                <input
+                  required
+                  value={homebrewDraft.damageFormula}
+                  onChange={(event) =>
+                    updateHomebrew("damageFormula", event.target.value)
+                  }
+                />
+              </label>
+              <label>
+                <span>Tipo dano</span>
+                <input
+                  required
+                  value={homebrewDraft.damageType}
+                  onChange={(event) =>
+                    updateHomebrew("damageType", event.target.value)
+                  }
+                />
+              </label>
+            </div>
+            <button className="text-button" disabled={homebrewBusy} type="submit">
+              Criar monstro
+            </button>
+          </form>
           {bestiary.length > 0 ? (
             <div className="monster-list">
               {bestiary.map((monster) => (

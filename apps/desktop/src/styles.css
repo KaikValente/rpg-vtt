@@ -289,6 +289,53 @@ h1 {
   margin: 0;
 }
 
+.homebrew-form {
+  display: grid;
+  gap: 12px;
+  border-bottom: 1px solid #d8d0c6;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+}
+
+.homebrew-form label {
+  display: grid;
+  gap: 5px;
+}
+
+.homebrew-form label span {
+  color: #65727e;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.homebrew-form input,
+.homebrew-form select,
+.homebrew-form textarea {
+  width: 100%;
+  border: 1px solid #c9c0b4;
+  background: #fffdf8;
+  color: #26333f;
+  min-height: 34px;
+  padding: 7px 9px;
+}
+
+.homebrew-form textarea {
+  resize: vertical;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.number-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
 .monster-list {
   display: grid;
   gap: 12px;
@@ -479,5 +526,10 @@ h1 {
 
   .monster-stats {
     justify-content: flex-start;
+  }
+
+  .form-grid,
+  .number-grid {
+    grid-template-columns: 1fr;
   }
 }

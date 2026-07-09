@@ -1,13 +1,15 @@
 use std::cmp::Reverse;
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use content_loader::{load_content_node, load_content_nodes_from_dir, load_ruleset, MonsterData};
 use engine_core::{compute_attributes, Entity};
 use persistence_sqlite::{
     Campaign, CombatEncounter, CombatParticipant, MapScene, MapToken, SqliteStore,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use serde_json::json;
 use tauri::{AppHandle, Manager};
 
 const DEFAULT_CAMPAIGN_ID: &str = "campaign-local";
@@ -121,6 +123,29 @@ pub struct MonsterActionSummary {
     damage_type: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HomebrewMonsterDraft {
+    name: String,
+    description: String,
+    size: String,
+    creature_type: String,
+    armor_class: i64,
+    hit_points: i64,
+    speed: i64,
+    challenge_rating: String,
+    str_score: i64,
+    dex_score: i64,
+    con_score: i64,
+    int_score: i64,
+    wis_score: i64,
+    cha_score: i64,
+    action_name: String,
+    attack_bonus: Option<i64>,
+    damage_formula: String,
+    damage_type: String,
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MapSceneSummary {
@@ -150,8 +175,19 @@ pub fn load_character_sheet(app: AppHandle) -> Result<CampaignWorkspace, String>
 }
 
 #[tauri::command]
-pub fn load_bestiary() -> Result<Vec<MonsterSummary>, String> {
-    build_bestiary().map_err(|error| error.to_string())
+pub fn load_bestiary(app: AppHandle) -> Result<Vec<MonsterSummary>, String> {
+    let homebrew_dir = homebrew_monsters_dir(&app).map_err(|error| error.to_string())?;
+    build_bestiary(Some(homebrew_dir)).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn create_homebrew_monster(
+    app: AppHandle,
+    draft: HomebrewMonsterDraft,
+) -> Result<Vec<MonsterSummary>, String> {
+    let homebrew_dir = homebrew_monsters_dir(&app).map_err(|error| error.to_string())?;
+    save_homebrew_monster(&homebrew_dir, draft).map_err(|error| error.to_string())?;
+    build_bestiary(Some(homebrew_dir)).map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -473,8 +509,19 @@ fn pack_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../content-packs/dnd5e-core")
 }
 
-fn build_bestiary() -> Result<Vec<MonsterSummary>, Box<dyn std::error::Error>> {
-    load_content_nodes_from_dir(pack_dir().join("monsters"))?
+fn homebrew_monsters_dir(app: &AppHandle) -> Result<PathBuf, Box<dyn std::error::Error>> {
+    Ok(app.path().app_data_dir()?.join("homebrew/monsters"))
+}
+
+fn build_bestiary(
+    homebrew_dir: Option<PathBuf>,
+) -> Result<Vec<MonsterSummary>, Box<dyn std::error::Error>> {
+    let mut nodes = load_monsters_from_dir(pack_dir().join("monsters"))?;
+    if let Some(homebrew_dir) = homebrew_dir {
+        nodes.extend(load_monsters_from_dir(homebrew_dir)?);
+    }
+
+    nodes
         .into_iter()
         .filter(|node| node.node_type == "monster")
         .map(|node| {
@@ -502,6 +549,137 @@ fn build_bestiary() -> Result<Vec<MonsterSummary>, Box<dyn std::error::Error>> {
             })
         })
         .collect()
+}
+
+fn load_monsters_from_dir(
+    dir: PathBuf,
+) -> Result<Vec<content_loader::ContentNode>, Box<dyn std::error::Error>> {
+    if !dir.exists() {
+        return Ok(Vec::new());
+    }
+
+    Ok(load_content_nodes_from_dir(dir)?)
+}
+
+fn save_homebrew_monster(
+    dir: &PathBuf,
+    draft: HomebrewMonsterDraft,
+) -> Result<(), Box<dyn std::error::Error>> {
+    validate_homebrew_monster(&draft)?;
+    std::fs::create_dir_all(dir)?;
+
+    let timestamp = current_unix_timestamp()?;
+    let slug = slugify(&draft.name);
+    let node_id = format!("homebrew-monster-{slug}-{timestamp}");
+    let path = dir.join(format!("{slug}-{timestamp}.json"));
+    let node = json!({
+        "id": node_id,
+        "type": "monster",
+        "metadata": {
+            "pack_id": "local-homebrew",
+            "version": "0.1.0",
+            "author": "local",
+            "created_at": timestamp.to_string(),
+            "updated_at": timestamp.to_string(),
+            "dependencies": []
+        },
+        "presentation": {
+            "name": draft.name.trim(),
+            "slug": slug,
+            "description": draft.description.trim(),
+            "tags": ["homebrew"],
+            "icon_asset": null
+        },
+        "mechanics": {
+            "data": {
+                "size": draft.size.trim(),
+                "creature_type": draft.creature_type.trim(),
+                "alignment": "unaligned",
+                "armor_class": draft.armor_class,
+                "hit_points": draft.hit_points,
+                "hit_dice": "1d8",
+                "speed": draft.speed,
+                "challenge_rating": draft.challenge_rating.trim(),
+                "ability_scores": {
+                    "STR": draft.str_score,
+                    "DEX": draft.dex_score,
+                    "CON": draft.con_score,
+                    "INT": draft.int_score,
+                    "WIS": draft.wis_score,
+                    "CHA": draft.cha_score
+                },
+                "senses": [],
+                "languages": [],
+                "actions": [
+                    {
+                        "name": draft.action_name.trim(),
+                        "description": "Acao homebrew simples.",
+                        "attack_bonus": draft.attack_bonus,
+                        "damage_formula": draft.damage_formula.trim(),
+                        "damage_type": draft.damage_type.trim()
+                    }
+                ]
+            },
+            "effects": []
+        }
+    });
+
+    let raw = serde_json::to_string_pretty(&node)?;
+    std::fs::write(&path, raw)?;
+
+    let saved = load_content_node(&path)?;
+    saved.monster_data()?;
+    Ok(())
+}
+
+fn validate_homebrew_monster(
+    draft: &HomebrewMonsterDraft,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let required = [
+        ("nome", draft.name.trim()),
+        ("tamanho", draft.size.trim()),
+        ("tipo de criatura", draft.creature_type.trim()),
+        ("ND", draft.challenge_rating.trim()),
+        ("acao", draft.action_name.trim()),
+        ("formula de dano", draft.damage_formula.trim()),
+        ("tipo de dano", draft.damage_type.trim()),
+    ];
+    if let Some((field, _)) = required.iter().find(|(_, value)| value.is_empty()) {
+        return Err(format!("campo obrigatorio vazio: {field}").into());
+    }
+    if draft.armor_class <= 0 || draft.hit_points <= 0 || draft.speed < 0 {
+        return Err("CA/PV devem ser positivos e deslocamento nao pode ser negativo".into());
+    }
+    Ok(())
+}
+
+fn slugify(value: &str) -> String {
+    let mut slug = String::new();
+    let mut previous_dash = false;
+
+    for character in value.chars().flat_map(char::to_lowercase) {
+        if character.is_ascii_alphanumeric() {
+            slug.push(character);
+            previous_dash = false;
+        } else if !previous_dash && !slug.is_empty() {
+            slug.push('-');
+            previous_dash = true;
+        }
+    }
+
+    while slug.ends_with('-') {
+        slug.pop();
+    }
+
+    if slug.is_empty() {
+        "monster".to_string()
+    } else {
+        slug
+    }
+}
+
+fn current_unix_timestamp() -> Result<u64, Box<dyn std::error::Error>> {
+    Ok(SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs())
 }
 
 fn ability_scores(computed: &HashMap<String, i64>) -> Vec<AbilityScore> {
@@ -657,7 +835,7 @@ mod tests {
 
     #[test]
     fn loads_bestiary_from_content_pack_monsters() {
-        let monsters = build_bestiary().unwrap();
+        let monsters = build_bestiary(None).unwrap();
 
         assert_eq!(monsters.len(), 1);
         assert_eq!(monsters[0].name, "Goblin");
@@ -665,6 +843,47 @@ mod tests {
         assert_eq!(monsters[0].hit_points, 7);
         assert_eq!(monsters[0].speed, "30 ft.");
         assert_eq!(monsters[0].actions.len(), 2);
+    }
+
+    #[test]
+    fn saves_homebrew_monster_as_loadable_content_node() {
+        let dir = std::env::temp_dir().join(format!(
+            "rpg-vtt-homebrew-test-{}",
+            current_unix_timestamp().unwrap()
+        ));
+        let draft = HomebrewMonsterDraft {
+            name: "Rato Arcano".to_string(),
+            description: "Um roedor imbuido de magia instavel.".to_string(),
+            size: "Tiny".to_string(),
+            creature_type: "beast".to_string(),
+            armor_class: 12,
+            hit_points: 3,
+            speed: 30,
+            challenge_rating: "0".to_string(),
+            str_score: 2,
+            dex_score: 14,
+            con_score: 8,
+            int_score: 3,
+            wis_score: 10,
+            cha_score: 4,
+            action_name: "Mordida".to_string(),
+            attack_bonus: Some(4),
+            damage_formula: "1d4+2".to_string(),
+            damage_type: "piercing".to_string(),
+        };
+
+        save_homebrew_monster(&dir, draft).unwrap();
+        let monsters = build_bestiary(Some(dir.clone())).unwrap();
+        let homebrew = monsters
+            .iter()
+            .find(|monster| monster.name == "Rato Arcano")
+            .expect("homebrew monster should be listed");
+
+        assert_eq!(homebrew.armor_class, 12);
+        assert_eq!(homebrew.hit_points, 3);
+        assert_eq!(homebrew.actions[0].name, "Mordida");
+
+        std::fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]

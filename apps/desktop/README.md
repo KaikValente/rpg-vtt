@@ -28,6 +28,8 @@ O frontend chama comandos Tauri. O backend Tauri orquestra os crates existentes 
 - Comando `load_bestiary`.
 - Painel de bestiario carregando monstros do content-pack.
 - Combate inicial cria o participante Goblin a partir do content-pack, mantendo CA/PV/acoes no bestiario ate existir um modelo completo de NPC em combate.
+- Comando `create_homebrew_monster`, que grava um monstro local como `ContentNode` JSON e valida pelo `content-loader`.
+- Formulario simples de monstro homebrew no painel de bestiario; monstros locais aparecem junto com o pack oficial.
 - Comandos `load_basic_map` e `move_map_token`.
 - Painel de mapa basico com grid e tokens posicionaveis.
 - Testes Rust garantindo que a ficha e montada a partir do estado salvo, que edicoes canonicas persistidas sao preservadas, que o combate basico avanca turno, que o bestiario vem dos JSONs do content-pack e que o mapa basico cria/move tokens.
@@ -63,6 +65,7 @@ cargo test
 
 - Ainda nao ha edicao da ficha pela UI.
 - Ainda nao ha selecao de campanha/personagem salvo; existe apenas uma campanha local padrao.
+- Homebrew tooling cobre apenas criacao simples de monstro; ainda nao edita/remove conteudo existente.
 - O bestiario ainda e uma listagem simples; o combate inicial usa o Goblin do content-pack, mas ainda nao transforma qualquer monstro escolhido em NPC completo automaticamente.
 - O mapa ainda e minimo: nao ha assets, paredes, iluminacao, fog of war, medida de distancia ou multiplayer.
 - O combate ainda e minimo: nao ha ataques, dano, condicoes, expiracao de efeitos por rodada ou bestiario completo.
