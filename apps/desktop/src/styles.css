@@ -348,6 +348,83 @@ h1 {
   gap: 6px;
 }
 
+.map-panel {
+  grid-column: 1 / -1;
+}
+
+.map-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.token-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.token-chip {
+  border: 1px solid #c9c0b4;
+  background: #f8f4ed;
+  color: #26333f;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 800;
+  min-height: 34px;
+  padding: 6px 10px;
+}
+
+.token-chip.selected {
+  border-color: #7d402d;
+  background: #fff7ed;
+  color: #7d402d;
+}
+
+.token-chip:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
+.map-grid {
+  display: grid;
+  border-top: 1px solid #c9c0b4;
+  border-left: 1px solid #c9c0b4;
+  width: 100%;
+}
+
+.map-cell {
+  aspect-ratio: 1;
+  border: 0;
+  border-right: 1px solid #c9c0b4;
+  border-bottom: 1px solid #c9c0b4;
+  background: #f8f4ed;
+  color: #26333f;
+  cursor: pointer;
+  font-size: clamp(0.62rem, 1.4vw, 0.84rem);
+  font-weight: 900;
+  overflow: hidden;
+  padding: 0;
+  text-align: center;
+}
+
+.map-cell:hover {
+  background: #fffdf8;
+}
+
+.map-cell.occupied {
+  background: #dfe9e4;
+}
+
+.map-cell.occupied.selected {
+  background: #8d4b35;
+  color: #fffdf8;
+}
+
+.map-cell:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
 @media (max-width: 860px) {
   .sheet-header {
     align-items: stretch;

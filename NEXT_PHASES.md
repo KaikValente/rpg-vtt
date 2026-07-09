@@ -1,6 +1,6 @@
 # Proximas Fases
 
-Resumo pratico para continuar o RPG Engine depois da Fase 8.
+Resumo pratico para continuar o RPG Engine depois da Fase 9.
 
 ## Estado atual
 
@@ -11,6 +11,7 @@ Resumo pratico para continuar o RPG Engine depois da Fase 8.
 - Fase 6: `apps/desktop` exibe a ficha inicial via Tauri + React.
 - Fase 7: `apps/desktop` cria/carrega uma campanha local, persiste o personagem inicial, recalcula a ficha a partir do estado salvo e oferece combate minimo com participantes, iniciativa e turno atual.
 - Fase 8: bestiario baseado em content-packs. `content-loader` interpreta `monster`, `dnd5e-core` contem um monstro inicial em JSON, e o app desktop lista monstros via comando Tauri.
+- Fase 9: mapas basicos. `persistence-sqlite` salva cenas com grid e tokens, e o app desktop abre uma cena inicial para posicionamento dos participantes.
 
 ## Regras que continuam valendo
 
@@ -23,15 +24,15 @@ Resumo pratico para continuar o RPG Engine depois da Fase 8.
 - Conteudo criado por homebrew tooling ou importado no futuro deve entrar como content-pack compativel.
 - Monstros nao devem ser cadastrados diretamente no codigo.
 
-## Proxima fase: Mapas basicos
+## Fase 9 concluida: Mapas basicos
 
-Objetivo recomendado da Fase 9:
+Implementado na Fase 9:
 
-- criar uma infraestrutura minima de mapa/cena;
-- representar grid simples e tokens de participantes;
-- manter mapa como estado de campanha, nao regra de dominio no `engine-core`;
-- permitir posicionar pelo menos o personagem e um monstro do bestiario em uma cena;
-- nao implementar VTT avancado, fog of war, assets complexos ou multiplayer.
+- infraestrutura minima de mapa/cena em `persistence-sqlite`;
+- grid simples e tokens de participantes como estado de campanha;
+- comandos Tauri para abrir a cena basica e mover tokens;
+- UI desktop para selecionar token e reposicionar no grid;
+- sem VTT avancado, fog of war, assets complexos ou multiplayer.
 
 O primeiro fluxo util deve ser pequeno:
 
@@ -44,9 +45,18 @@ abrir app
 -> ver/posicionar tokens em um grid
 ```
 
+## Proxima fase: Homebrew tooling
+
+Objetivo recomendado da Fase 10:
+
+- criar tooling pequeno para editar/criar conteudo declarativo;
+- manter homebrew como content-pack compativel, nao regra hardcoded;
+- comecar por uma fatia util e limitada, como item ou monstro simples;
+- validar JSON gerado pelo mesmo caminho do `content-loader`;
+- evitar marketplace, plugins, importacao de PDF ou UI avancada.
+
 ## Pendencias importantes
 
-- Decidir o schema minimo de cena/mapa em `persistence-sqlite`.
 - Conectar monstro do bestiario a um participante/NPC real de combate.
 - Tornar a ficha editavel sem mover regra para React.
 - Criar algum indice/resolucao de `ContentNode` por id quando carregar referencias ficar incomodo.

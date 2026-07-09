@@ -10,4 +10,4 @@ mod error;
 mod store;
 
 pub use error::PersistenceError;
-pub use store::{Campaign, CombatEncounter, CombatParticipant, SqliteStore};
+pub use store::{Campaign, CombatEncounter, CombatParticipant, MapScene, MapToken, SqliteStore};

@@ -5,8 +5,10 @@ pub fn run() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             commands::advance_combat_turn,
+            commands::load_basic_map,
             commands::load_bestiary,
             commands::load_character_sheet,
+            commands::move_map_token,
             commands::start_basic_combat
         ])
         .run(tauri::generate_context!())

@@ -27,7 +27,9 @@ O frontend chama comandos Tauri. O backend Tauri orquestra os crates existentes 
 - Painel de combate com participantes, iniciativa e turno atual.
 - Comando `load_bestiary`.
 - Painel de bestiario carregando monstros do content-pack.
-- Testes Rust garantindo que a ficha e montada a partir do estado salvo, que edicoes canonicas persistidas sao preservadas, que o combate basico avanca turno e que o bestiario vem dos JSONs do content-pack.
+- Comandos `load_basic_map` e `move_map_token`.
+- Painel de mapa basico com grid e tokens posicionaveis.
+- Testes Rust garantindo que a ficha e montada a partir do estado salvo, que edicoes canonicas persistidas sao preservadas, que o combate basico avanca turno, que o bestiario vem dos JSONs do content-pack e que o mapa basico cria/move tokens.
 
 ## Rodando
 
@@ -61,4 +63,5 @@ cargo test
 - Ainda nao ha edicao da ficha pela UI.
 - Ainda nao ha selecao de campanha/personagem salvo; existe apenas uma campanha local padrao.
 - O bestiario ainda e uma listagem simples; nao transforma monstros em NPCs/participantes automaticamente.
-- O combate ainda e minimo: nao ha ataques, dano, condicoes, expiracao de efeitos por rodada, mapas ou bestiario completo.
+- O mapa ainda e minimo: nao ha assets, paredes, iluminacao, fog of war, medida de distancia ou multiplayer.
+- O combate ainda e minimo: nao ha ataques, dano, condicoes, expiracao de efeitos por rodada ou bestiario completo.

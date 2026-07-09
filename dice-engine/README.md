@@ -12,6 +12,8 @@ Implementado e validado pelo workspace. Para verificar:
 cargo test
 ```
 
+O workspace tambem deve passar em `cargo clippy --all-targets --all-features -- -D warnings`.
+
 ## O que foi feito
 
 Todo o pipeline descrito na arquitetura (seção 9 do documento de arquitetura): `String → Lexer → Parser → AST → Evaluator → RollResult`, dividido em módulos de responsabilidade única:

@@ -4,7 +4,9 @@ use std::path::PathBuf;
 
 use content_loader::{load_content_node, load_content_nodes_from_dir, load_ruleset};
 use engine_core::{compute_attributes, Entity};
-use persistence_sqlite::{Campaign, CombatEncounter, CombatParticipant, SqliteStore};
+use persistence_sqlite::{
+    Campaign, CombatEncounter, CombatParticipant, MapScene, MapToken, SqliteStore,
+};
 use serde::Serialize;
 use tauri::{AppHandle, Manager};
 
@@ -13,6 +15,7 @@ const DEFAULT_CAMPAIGN_NAME: &str = "Mesa Local";
 const DEFAULT_CHARACTER_ID: &str = "hero-human-wizard-1";
 const DEFAULT_CHARACTER_NAME: &str = "Arannis";
 const DEFAULT_COMBAT_ID: &str = "combat-local";
+const DEFAULT_MAP_SCENE_ID: &str = "scene-local";
 const DEFAULT_RULESET_ID: &str = "dnd5e";
 
 #[derive(Debug, Serialize)]
@@ -45,6 +48,7 @@ pub struct CampaignWorkspace {
     campaign: CampaignSummary,
     character: CharacterSheet,
     combat: Option<CombatSummary>,
+    map: Option<MapSceneSummary>,
 }
 
 #[derive(Debug, Serialize)]
@@ -117,6 +121,27 @@ pub struct MonsterActionSummary {
     damage_type: Option<String>,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MapSceneSummary {
+    id: String,
+    name: String,
+    width: i64,
+    height: i64,
+    tokens: Vec<MapTokenSummary>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MapTokenSummary {
+    id: String,
+    participant_id: Option<String>,
+    entity_id: Option<String>,
+    name: String,
+    x: i64,
+    y: i64,
+}
+
 #[tauri::command]
 pub fn load_character_sheet(app: AppHandle) -> Result<CampaignWorkspace, String> {
     let db_path = app_database_path(&app).map_err(|error| error.to_string())?;
@@ -127,6 +152,41 @@ pub fn load_character_sheet(app: AppHandle) -> Result<CampaignWorkspace, String>
 #[tauri::command]
 pub fn load_bestiary() -> Result<Vec<MonsterSummary>, String> {
     build_bestiary().map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn load_basic_map(app: AppHandle) -> Result<CampaignWorkspace, String> {
+    let db_path = app_database_path(&app).map_err(|error| error.to_string())?;
+    let mut store = SqliteStore::open(db_path).map_err(|error| error.to_string())?;
+    ensure_workspace_seed(&mut store).map_err(|error| error.to_string())?;
+    ensure_default_map_scene(&mut store).map_err(|error| error.to_string())?;
+    build_campaign_workspace(&mut store).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn move_map_token(
+    app: AppHandle,
+    token_id: String,
+    x: i64,
+    y: i64,
+) -> Result<CampaignWorkspace, String> {
+    let db_path = app_database_path(&app).map_err(|error| error.to_string())?;
+    let mut store = SqliteStore::open(db_path).map_err(|error| error.to_string())?;
+    ensure_workspace_seed(&mut store).map_err(|error| error.to_string())?;
+    ensure_default_map_scene(&mut store).map_err(|error| error.to_string())?;
+
+    let mut scene = store
+        .load_map_scene(DEFAULT_MAP_SCENE_ID)
+        .map_err(|error| error.to_string())?
+        .ok_or("default map scene was not saved")?;
+    if !scene.move_token(&token_id, x, y) {
+        return Err(format!("map token not found: {token_id}"));
+    }
+    store
+        .save_map_scene(&scene)
+        .map_err(|error| error.to_string())?;
+
+    build_campaign_workspace(&mut store).map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -244,6 +304,9 @@ fn build_campaign_workspace(
     let combat = store
         .load_campaign_combat(&campaign.id)?
         .map(combat_summary);
+    let map = store
+        .load_campaign_map_scene(&campaign.id)?
+        .map(map_scene_summary);
 
     Ok(CampaignWorkspace {
         campaign: CampaignSummary {
@@ -265,6 +328,7 @@ fn build_campaign_workspace(
             items,
         },
         combat,
+        map,
     })
 }
 
@@ -333,6 +397,51 @@ fn start_default_combat(store: &mut SqliteStore) -> Result<(), Box<dyn std::erro
         .participants
         .sort_by_key(|participant| Reverse(participant.initiative));
     store.save_combat_encounter(&combat)?;
+    Ok(())
+}
+
+fn ensure_default_map_scene(store: &mut SqliteStore) -> Result<(), Box<dyn std::error::Error>> {
+    let campaign = ensure_default_campaign(store)?;
+    if store.load_map_scene(DEFAULT_MAP_SCENE_ID)?.is_some() {
+        return Ok(());
+    }
+    if store.load_combat_encounter(DEFAULT_COMBAT_ID)?.is_none() {
+        start_default_combat(store)?;
+    }
+    let combat = store
+        .load_combat_encounter(DEFAULT_COMBAT_ID)?
+        .ok_or("default combat was not saved")?;
+
+    let tokens = combat
+        .participants
+        .into_iter()
+        .enumerate()
+        .map(|(index, participant)| {
+            let (x, y) = match index {
+                0 => (1, 3),
+                1 => (8, 3),
+                _ => (index as i64, 1),
+            };
+            MapToken::new(
+                format!("{}-token", participant.id),
+                Some(participant.id),
+                participant.entity_id,
+                participant.name,
+                x,
+                y,
+            )
+        })
+        .collect();
+
+    let scene = MapScene::new(
+        DEFAULT_MAP_SCENE_ID,
+        campaign.id,
+        "Encontro inicial",
+        10,
+        6,
+        tokens,
+    );
+    store.save_map_scene(&scene)?;
     Ok(())
 }
 
@@ -416,6 +525,27 @@ fn combat_summary(combat: CombatEncounter) -> CombatSummary {
     }
 }
 
+fn map_scene_summary(scene: MapScene) -> MapSceneSummary {
+    MapSceneSummary {
+        id: scene.id,
+        name: scene.name,
+        width: scene.width,
+        height: scene.height,
+        tokens: scene
+            .tokens
+            .into_iter()
+            .map(|token| MapTokenSummary {
+                id: token.id,
+                participant_id: token.participant_id,
+                entity_id: token.entity_id,
+                name: token.name,
+                x: token.x,
+                y: token.y,
+            })
+            .collect(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -439,6 +569,7 @@ mod tests {
         assert_eq!(sheet.spells.len(), 4);
         assert_eq!(sheet.items.len(), 2);
         assert!(workspace.combat.is_none());
+        assert!(workspace.map.is_none());
     }
 
     #[test]
@@ -506,5 +637,35 @@ mod tests {
         assert_eq!(monsters[0].name, "Goblin");
         assert_eq!(monsters[0].armor_class, 15);
         assert_eq!(monsters[0].actions.len(), 2);
+    }
+
+    #[test]
+    fn creates_and_moves_basic_map_tokens() {
+        let mut store = SqliteStore::in_memory().unwrap();
+        ensure_workspace_seed(&mut store).unwrap();
+        ensure_default_map_scene(&mut store).unwrap();
+
+        let workspace = build_campaign_workspace(&mut store).unwrap();
+        let map = workspace.map.expect("map should exist");
+        assert_eq!(map.id, DEFAULT_MAP_SCENE_ID);
+        assert_eq!(map.width, 10);
+        assert_eq!(map.height, 6);
+        assert_eq!(map.tokens.len(), 2);
+        assert_eq!(map.tokens[0].name, DEFAULT_CHARACTER_NAME);
+
+        let mut scene = store.load_map_scene(DEFAULT_MAP_SCENE_ID).unwrap().unwrap();
+        assert!(scene.move_token(&map.tokens[0].id, 4, 2));
+        store.save_map_scene(&scene).unwrap();
+
+        let workspace = build_campaign_workspace(&mut store).unwrap();
+        let moved = workspace
+            .map
+            .unwrap()
+            .tokens
+            .into_iter()
+            .find(|token| token.name == DEFAULT_CHARACTER_NAME)
+            .unwrap();
+        assert_eq!(moved.x, 4);
+        assert_eq!(moved.y, 2);
     }
 }

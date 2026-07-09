@@ -80,6 +80,6 @@ Ao terminar uma tarefa:
 
 ## Fase atual
 
-Fase atual: Fase 8 — Bestiário baseado em content-packs implementado.
+Fase atual: Fase 9 — Mapas básicos implementados.
 
-Próxima fase planejada: Fase 9 — Mapas básicos.
+Próxima fase planejada: Fase 10 — Homebrew tooling.

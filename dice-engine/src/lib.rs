@@ -85,7 +85,7 @@ mod integration_tests {
         // quebra e devolve um total dentro do intervalo esperado.
         let ctx = RollContext::new().with("STR", 3);
         let result = roll("1d20+STR", &ctx, &RollPolicy::normal()).unwrap();
-        assert!(result.total >= 1 + 3 && result.total <= 20 + 3);
+        assert!(result.total > 3 && result.total <= 23);
     }
 
     #[test]

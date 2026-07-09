@@ -47,6 +47,7 @@ type CampaignWorkspace = {
   campaign: CampaignSummary;
   character: CharacterSheet;
   combat?: CombatSummary | null;
+  map?: MapSceneSummary | null;
 };
 
 type CombatSummary = {
@@ -84,6 +85,23 @@ type MonsterActionSummary = {
   damageType?: string | null;
 };
 
+type MapSceneSummary = {
+  id: string;
+  name: string;
+  width: number;
+  height: number;
+  tokens: MapTokenSummary[];
+};
+
+type MapTokenSummary = {
+  id: string;
+  participantId?: string | null;
+  entityId?: string | null;
+  name: string;
+  x: number;
+  y: number;
+};
+
 function modifierText(value: number) {
   return value >= 0 ? `+${value}` : `${value}`;
 }
@@ -94,6 +112,8 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [combatBusy, setCombatBusy] = useState(false);
+  const [mapBusy, setMapBusy] = useState(false);
+  const [selectedTokenId, setSelectedTokenId] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -128,6 +148,38 @@ function App() {
       });
   }
 
+  function openMap() {
+    setMapBusy(true);
+    invoke<CampaignWorkspace>("load_basic_map")
+      .then((loaded) => {
+        setWorkspace(loaded);
+        setSelectedTokenId(loaded.map?.tokens[0]?.id ?? null);
+        setError(null);
+      })
+      .catch((err) => {
+        setError(String(err));
+      })
+      .finally(() => {
+        setMapBusy(false);
+      });
+  }
+
+  function moveToken(tokenId: string, x: number, y: number) {
+    setMapBusy(true);
+    invoke<CampaignWorkspace>("move_map_token", { tokenId, x, y })
+      .then((loaded) => {
+        setWorkspace(loaded);
+        setSelectedTokenId(tokenId);
+        setError(null);
+      })
+      .catch((err) => {
+        setError(String(err));
+      })
+      .finally(() => {
+        setMapBusy(false);
+      });
+  }
+
   const spellGroups = useMemo(() => {
     const sheet = workspace?.character;
     if (!sheet) {
@@ -144,6 +196,14 @@ function App() {
       },
     ];
   }, [workspace]);
+
+  const selectedToken = useMemo(() => {
+    const map = workspace?.map;
+    if (!map) {
+      return null;
+    }
+    return map.tokens.find((token) => token.id === selectedTokenId) ?? map.tokens[0] ?? null;
+  }, [selectedTokenId, workspace]);
 
   if (loading) {
     return <main className="app-shell loading">Carregando ficha...</main>;
@@ -297,6 +357,86 @@ function App() {
             </div>
           ) : (
             <p className="empty-state">Nenhum combate ativo.</p>
+          )}
+        </section>
+
+        <section className="panel map-panel">
+          <div className="panel-heading panel-heading-row">
+            <h2>Mapa</h2>
+            <button
+              className="text-button"
+              disabled={mapBusy}
+              type="button"
+              onClick={openMap}
+            >
+              {workspace.map ? "Recarregar" : "Abrir"}
+            </button>
+          </div>
+          {workspace.map ? (
+            <div className="map-stack">
+              <div className="token-picker" aria-label="Tokens do mapa">
+                {workspace.map.tokens.map((token) => (
+                  <button
+                    className={
+                      selectedToken?.id === token.id
+                        ? "token-chip selected"
+                        : "token-chip"
+                    }
+                    disabled={mapBusy}
+                    key={token.id}
+                    type="button"
+                    onClick={() => setSelectedTokenId(token.id)}
+                  >
+                    {token.name}
+                  </button>
+                ))}
+              </div>
+              <div
+                className="map-grid"
+                style={{
+                  gridTemplateColumns: `repeat(${workspace.map.width}, minmax(0, 1fr))`,
+                }}
+              >
+                {Array.from({ length: workspace.map.width * workspace.map.height }).map(
+                  (_, index) => {
+                    const x = index % workspace.map!.width;
+                    const y = Math.floor(index / workspace.map!.width);
+                    const token = workspace.map!.tokens.find(
+                      (candidate) => candidate.x === x && candidate.y === y,
+                    );
+                    const isSelected = token && selectedToken?.id === token.id;
+                    return (
+                      <button
+                        aria-label={`Celula ${x + 1}, ${y + 1}`}
+                        className={
+                          token
+                            ? isSelected
+                              ? "map-cell occupied selected"
+                              : "map-cell occupied"
+                            : "map-cell"
+                        }
+                        disabled={mapBusy}
+                        key={`${x}-${y}`}
+                        type="button"
+                        onClick={() => {
+                          if (token) {
+                            setSelectedTokenId(token.id);
+                            return;
+                          }
+                          if (selectedToken) {
+                            moveToken(selectedToken.id, x, y);
+                          }
+                        }}
+                      >
+                        {token ? token.name.slice(0, 2).toUpperCase() : ""}
+                      </button>
+                    );
+                  },
+                )}
+              </div>
+            </div>
+          ) : (
+            <p className="empty-state">Nenhuma cena aberta.</p>
           )}
         </section>
 

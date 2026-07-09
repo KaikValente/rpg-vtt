@@ -82,6 +82,76 @@ impl CombatParticipant {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MapScene {
+    pub id: String,
+    pub campaign_id: String,
+    pub name: String,
+    pub width: i64,
+    pub height: i64,
+    pub tokens: Vec<MapToken>,
+}
+
+impl MapScene {
+    pub fn new(
+        id: impl Into<String>,
+        campaign_id: impl Into<String>,
+        name: impl Into<String>,
+        width: i64,
+        height: i64,
+        tokens: Vec<MapToken>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            campaign_id: campaign_id.into(),
+            name: name.into(),
+            width,
+            height,
+            tokens,
+        }
+    }
+
+    pub fn move_token(&mut self, token_id: &str, x: i64, y: i64) -> bool {
+        let Some(token) = self.tokens.iter_mut().find(|token| token.id == token_id) else {
+            return false;
+        };
+
+        token.x = x.clamp(0, self.width.saturating_sub(1));
+        token.y = y.clamp(0, self.height.saturating_sub(1));
+        true
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MapToken {
+    pub id: String,
+    pub participant_id: Option<String>,
+    pub entity_id: Option<String>,
+    pub name: String,
+    pub x: i64,
+    pub y: i64,
+}
+
+impl MapToken {
+    pub fn new(
+        id: impl Into<String>,
+        participant_id: Option<String>,
+        entity_id: Option<String>,
+        name: impl Into<String>,
+        x: i64,
+        y: i64,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            participant_id,
+            entity_id,
+            name: name.into(),
+            x,
+            y,
+        }
+    }
+}
+
 pub struct SqliteStore {
     conn: Connection,
 }
@@ -157,6 +227,29 @@ impl SqliteStore {
                 initiative INTEGER NOT NULL,
                 PRIMARY KEY (encounter_id, position),
                 FOREIGN KEY (encounter_id) REFERENCES combat_encounters(id) ON DELETE CASCADE,
+                FOREIGN KEY (entity_id) REFERENCES entities(id) ON DELETE SET NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS map_scenes (
+                id TEXT PRIMARY KEY,
+                campaign_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                width INTEGER NOT NULL,
+                height INTEGER NOT NULL,
+                FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS map_tokens (
+                scene_id TEXT NOT NULL,
+                position INTEGER NOT NULL,
+                id TEXT NOT NULL,
+                participant_id TEXT,
+                entity_id TEXT,
+                name TEXT NOT NULL,
+                x INTEGER NOT NULL,
+                y INTEGER NOT NULL,
+                PRIMARY KEY (scene_id, position),
+                FOREIGN KEY (scene_id) REFERENCES map_scenes(id) ON DELETE CASCADE,
                 FOREIGN KEY (entity_id) REFERENCES entities(id) ON DELETE SET NULL
             );
             "#,
@@ -431,6 +524,147 @@ impl SqliteStore {
 
         self.load_combat_encounter(&encounter_id)
     }
+
+    pub fn save_map_scene(&mut self, scene: &MapScene) -> Result<(), PersistenceError> {
+        let tx = self.conn.transaction()?;
+        tx.execute(
+            r#"
+            INSERT INTO map_scenes (id, campaign_id, name, width, height)
+            VALUES (?1, ?2, ?3, ?4, ?5)
+            ON CONFLICT(id) DO UPDATE SET
+                campaign_id = excluded.campaign_id,
+                name = excluded.name,
+                width = excluded.width,
+                height = excluded.height
+            "#,
+            params![
+                scene.id,
+                scene.campaign_id,
+                scene.name,
+                scene.width,
+                scene.height
+            ],
+        )?;
+
+        tx.execute(
+            "DELETE FROM map_tokens WHERE scene_id = ?1",
+            params![scene.id],
+        )?;
+        for (position, token) in scene.tokens.iter().enumerate() {
+            tx.execute(
+                r#"
+                INSERT INTO map_tokens (
+                    scene_id,
+                    position,
+                    id,
+                    participant_id,
+                    entity_id,
+                    name,
+                    x,
+                    y
+                )
+                VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+                "#,
+                params![
+                    scene.id,
+                    position as i64,
+                    token.id,
+                    token.participant_id,
+                    token.entity_id,
+                    token.name,
+                    token.x,
+                    token.y,
+                ],
+            )?;
+        }
+
+        tx.commit()?;
+        Ok(())
+    }
+
+    pub fn load_map_scene(&self, id: &str) -> Result<Option<MapScene>, PersistenceError> {
+        let Some((scene_id, campaign_id, name, width, height)) = self
+            .conn
+            .query_row(
+                r#"
+                SELECT id, campaign_id, name, width, height
+                FROM map_scenes
+                WHERE id = ?1
+                "#,
+                params![id],
+                |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, String>(2)?,
+                        row.get::<_, i64>(3)?,
+                        row.get::<_, i64>(4)?,
+                    ))
+                },
+            )
+            .optional()?
+        else {
+            return Ok(None);
+        };
+
+        let mut stmt = self.conn.prepare(
+            r#"
+            SELECT id, participant_id, entity_id, name, x, y
+            FROM map_tokens
+            WHERE scene_id = ?1
+            ORDER BY position
+            "#,
+        )?;
+        let rows = stmt.query_map(params![scene_id], |row| {
+            Ok(MapToken {
+                id: row.get(0)?,
+                participant_id: row.get(1)?,
+                entity_id: row.get(2)?,
+                name: row.get(3)?,
+                x: row.get(4)?,
+                y: row.get(5)?,
+            })
+        })?;
+
+        let mut tokens = Vec::new();
+        for row in rows {
+            tokens.push(row?);
+        }
+
+        Ok(Some(MapScene {
+            id: scene_id,
+            campaign_id,
+            name,
+            width,
+            height,
+            tokens,
+        }))
+    }
+
+    pub fn load_campaign_map_scene(
+        &self,
+        campaign_id: &str,
+    ) -> Result<Option<MapScene>, PersistenceError> {
+        let Some(scene_id) = self
+            .conn
+            .query_row(
+                r#"
+                SELECT id
+                FROM map_scenes
+                WHERE campaign_id = ?1
+                ORDER BY id
+                LIMIT 1
+                "#,
+                params![campaign_id],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()?
+        else {
+            return Ok(None);
+        };
+
+        self.load_map_scene(&scene_id)
+    }
 }
 
 fn insert_effect(
@@ -650,5 +884,57 @@ mod tests {
         assert_eq!(loaded.id, "combat-1");
         assert_eq!(loaded.current_turn_index, 1);
         assert_eq!(loaded.participants, encounter.participants);
+    }
+
+    #[test]
+    fn saves_loads_and_moves_basic_map_scene() {
+        let mut store = SqliteStore::in_memory().unwrap();
+        store
+            .save_campaign(&Campaign::new("campaign-1", "Mesa de Quinta", "dnd5e"))
+            .unwrap();
+
+        let mut entity = Entity::new("hero-1", "dnd5e");
+        entity.set_base("DEX", 14);
+        store.save_entity("campaign-1", &entity).unwrap();
+
+        let mut scene = MapScene::new(
+            "scene-1",
+            "campaign-1",
+            "Sala inicial",
+            8,
+            6,
+            vec![
+                MapToken::new(
+                    "hero-token",
+                    Some("hero-combat".to_string()),
+                    Some("hero-1".to_string()),
+                    "Arannis",
+                    1,
+                    1,
+                ),
+                MapToken::new(
+                    "goblin-token",
+                    Some("goblin-1".to_string()),
+                    None,
+                    "Goblin",
+                    6,
+                    4,
+                ),
+            ],
+        );
+
+        assert!(scene.move_token("goblin-token", 20, -3));
+        store.save_map_scene(&scene).unwrap();
+        let loaded = store
+            .load_campaign_map_scene("campaign-1")
+            .unwrap()
+            .expect("scene should be saved");
+
+        assert_eq!(loaded.id, "scene-1");
+        assert_eq!(loaded.width, 8);
+        assert_eq!(loaded.height, 6);
+        assert_eq!(loaded.tokens.len(), 2);
+        assert_eq!(loaded.tokens[1].x, 7);
+        assert_eq!(loaded.tokens[1].y, 0);
     }
 }
